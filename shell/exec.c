@@ -1,6 +1,10 @@
 #include "exec.h"
 #include <sys/wait.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#define REDIR_TO_OUT "&1"
 // sets "key" with the key part of "arg"
 // and null-terminates it
 //
@@ -65,7 +69,10 @@ set_environ_vars(char **eargv, int eargc)
 static int
 open_redir_fd(char *file, int flags)
 {
-	// Your code here
+	if(strlen(file) > 0){
+		// printf("SE TIENE QUE DIRECCIONAR AL ARCHIVO %s\n", file);
+		return open(file, flags | O_CREAT, S_IRUSR | S_IWUSR); //, O_CREAT, S_IWUSR, S_IRUSR);
+	}
 
 	return -1;
 }
@@ -129,11 +136,11 @@ void divide_pipe(struct pipecmd *p){
 
 	if (pidright == 0){
 		
-		if(p->rightcmd->type != PIPE){
-			struct execcmd *temp = p->rightcmd;
-			printf("DEBERIA EJECUTAR PIPE?\n");
-			printf("DERECHA CON %s %s",temp->argv[0],temp->argv[1]);	
-		} 
+		//if(p->rightcmd->type != PIPE){
+		//	struct execcmd *temp = p->rightcmd;
+			//printf("DEBERIA EJECUTAR PIPE?\n");
+			//printf("DERECHA CON %s %s",temp->argv[0],temp->argv[1]);	
+		//} 
 
 		
 		
@@ -188,19 +195,46 @@ exec_cmd(struct cmd *cmd)
 		// verify if file name's length (in the execcmd struct)
 		// is greater than zero
 		//
-		// Your code here
-		printf("Redirections are not yet implemented\n");
-		_exit(-1);
+		struct execcmd *r= cmd;
+		int fdFile = open_redir_fd(r->in_file, O_RDONLY);
+		if (fdFile >= 0){ 
+			//printf("DEBERIA REDIR INPUT A %s \n",&r->in_file[0]);
+			dup2(fdFile, 0);
+			close(fdFile);
+		} 
+		
+		fdFile = open_redir_fd(r->out_file, O_WRONLY);
+		//printf("DEBERIA REDIR OUTPUT %d\n",fdFile);
+		if (fdFile > 0){ 
+			
+			dup2(fdFile, 1);
+			close(fdFile);
+
+		}
+
+		if(strncmp(r->err_file,REDIR_TO_OUT, 2) == 0){
+			dup2(1, 2); // En vez de un archivo, lo que sea que apunte el stdout =1
+		} else{
+			fdFile = open_redir_fd(r->err_file, O_WRONLY);
+			//fprintf(stderr,"DEBERIA REDIR ERR %d\n",fdFile);
+			if (fdFile > 0){
+				//printf("DEBERIA REDIR INPUT A %s ",&r->in_file[0]);
+				dup2(fdFile, 2);
+				close(fdFile);
+			}
+		}
+		//fprintf(stderr,"DEBERIA REDIR ERR %d\n",stderr);
+
+		//printf("SALIÓ TODO BIEN CON LOS ARCHIVOS Y VOY A EJECUTAR: \n");
+		simple_exec(r);
 		break;
 	}
 
 	case PIPE: {
 		// pipes two commands
-		//
-		// Your code here
-		
+		//		
 		divide_pipe((struct pipecmd *) cmd);
-		printf("Despues del divide pipe\n");
+		//printf("Despues del divide pipe\n");
 		
 		// free the memory allocated
 		// for the pipe tree structure
