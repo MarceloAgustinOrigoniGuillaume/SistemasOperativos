@@ -1,5 +1,6 @@
 #include "exec.h"
-
+#include <sys/wait.h>
+#include <unistd.h>
 // sets "key" with the key part of "arg"
 // and null-terminates it
 //
@@ -69,6 +70,61 @@ open_redir_fd(char *file, int flags)
 	return -1;
 }
 
+void simple_exec(struct execcmd *e){
+	execvp(e->argv[0], e->argv);
+	printf("Commands are not yet implemented\n");
+	_exit(-1);
+}
+
+
+int
+waitAndGetRet(int pid)
+{
+	int status;
+	waitpid(pid, &status, 0);
+	if (WIFSIGNALED(status)) {
+		return 1;
+	} else if (WIFEXITED(status)) {
+		return WEXITSTATUS(status);
+	}
+
+
+	return 0;
+}
+
+void divide_pipe(struct pipecmd *p){
+	
+	int pidleft = fork();
+
+
+
+	if (pidleft < 0){
+		fprintf(stderr,"Fork for left process failed\n");
+		_exit(-1);
+	}
+
+	if (pidleft == 0){
+		simple_exec(p->leftcmd);
+	}
+	
+	int pidright = fork();
+
+	if (pidright < 0){
+		fprintf(stderr,"Fork for right process failed\n");
+		_exit(-1);
+	}
+
+	if (pidright == 0){
+		simple_exec(p->rightcmd);
+	}
+
+	
+	waitAndGetRet(pidleft);
+
+	waitAndGetRet(pidright);
+
+}
+
 // executes a command - does not return
 //
 // Hint:
@@ -79,18 +135,16 @@ void
 exec_cmd(struct cmd *cmd)
 {
 	// To be used in the different cases
-	struct execcmd *e;
+	
 	struct backcmd *b;
 	struct execcmd *r;
-	struct pipecmd *p;
+	
 
 	switch (cmd->type) {
 	case EXEC:
 		// spawns a command
 		//
-		// Your code here
-		printf("Commands are not yet implemented\n");
-		_exit(-1);
+		simple_exec((struct execcmd *) cmd);
 		break;
 
 	case BACK: {
@@ -119,12 +173,14 @@ exec_cmd(struct cmd *cmd)
 		// pipes two commands
 		//
 		// Your code here
-		printf("Pipes are not yet implemented\n");
-
+		
+		divide_pipe((struct pipecmd *) cmd);
+		printf("Despues del divide pipe\n");
+		
 		// free the memory allocated
 		// for the pipe tree structure
 		free_command(parsed_pipe);
-
+		_exit(-1);
 		break;
 	}
 	}
