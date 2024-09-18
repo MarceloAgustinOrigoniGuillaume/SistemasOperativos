@@ -93,7 +93,12 @@ waitAndGetRet(int pid)
 }
 
 void divide_pipe(struct pipecmd *p){
-	
+	int fdPipe[2];
+	if(pipe(fdPipe) < 0){
+		fprintf(stderr,"Pipe creation for divide failed\n");
+		_exit(-1);
+	}
+
 	int pidleft = fork();
 
 
@@ -104,21 +109,32 @@ void divide_pipe(struct pipecmd *p){
 	}
 
 	if (pidleft == 0){
+		close(fdPipe[0]);
+		dup2(fdPipe[1], 1);
+		close(fdPipe[1]);
+
 		simple_exec(p->leftcmd);
 	}
+
+	close(fdPipe[1]);
 	
 	int pidright = fork();
 
 	if (pidright < 0){
+		
 		fprintf(stderr,"Fork for right process failed\n");
 		_exit(-1);
 	}
 
+
 	if (pidright == 0){
+		dup2(fdPipe[0], 0);
+		close(fdPipe[0]);
+
 		simple_exec(p->rightcmd);
 	}
+	close(fdPipe[0]);
 
-	
 	waitAndGetRet(pidleft);
 
 	waitAndGetRet(pidright);
