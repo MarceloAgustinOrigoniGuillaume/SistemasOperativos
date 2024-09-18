@@ -128,10 +128,19 @@ void divide_pipe(struct pipecmd *p){
 
 
 	if (pidright == 0){
+		
+		if(p->rightcmd->type != PIPE){
+			struct execcmd *temp = p->rightcmd;
+			printf("DEBERIA EJECUTAR PIPE?\n");
+			printf("DERECHA CON %s %s",temp->argv[0],temp->argv[1]);	
+		} 
+
+		
+		
 		dup2(fdPipe[0], 0);
 		close(fdPipe[0]);
 
-		simple_exec(p->rightcmd);
+		exec_cmd(p->rightcmd);
 	}
 	close(fdPipe[0]);
 
