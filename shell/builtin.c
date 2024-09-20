@@ -26,9 +26,28 @@ exit_shell(char *cmd)
 int
 cd(char *cmd)
 {
-	// Your code here
+	if (strncmp(cmd, "cd", 2) != 0)
+		return 0;
 
-	return 0;
+	char *path = strtok(cmd, " ");
+	path = strtok(NULL, " ");
+
+	if (path == NULL) {
+		char *home = getenv("HOME");
+		if (chdir(home) < 0) {
+			perror("ERROR: could not change to home directory");
+			return 0;
+		}
+		snprintf(prompt, sizeof prompt, "(%s)", home);
+	} else {
+		if (chdir(path) < 0) {
+			perror("ERROR: Cannot change directory");
+			return 0;
+		}
+		snprintf(prompt, sizeof prompt, "(%s)", path);
+	}
+
+	return 1;
 }
 
 // returns true if 'pwd' was invoked
