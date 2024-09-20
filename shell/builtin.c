@@ -1,4 +1,5 @@
 #include "builtin.h"
+#include <string.h>
 
 // returns true if the 'exit' call
 // should be performed
@@ -7,9 +8,7 @@
 int
 exit_shell(char *cmd)
 {
-	// Your code here
-
-	return 0;
+	return (strncmp(cmd, "exit", 4) == 0) ? 1 : 0;
 }
 
 // returns true if "chdir" was performed
@@ -40,9 +39,16 @@ cd(char *cmd)
 int
 pwd(char *cmd)
 {
-	// Your code here
-
-	return 0;
+	if (strncmp(cmd, "pwd", 3) != 0)
+		return 0;
+	char *cwd = getcwd(NULL, 0);
+	if (cwd == NULL) {
+		perror("ERROR: could not get current directory");
+		return 0;
+	}
+	printf("%s\n", cwd);
+	free(cwd);
+	return 1;
 }
 
 // returns true if `history` was invoked
