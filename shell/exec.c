@@ -111,15 +111,20 @@ unset_environ_vars(char **eargv, int eargc)
 static int
 open_redir_fd(char *file, int flags)
 {
-	if(strlen(file) > 0){
+	if (strlen(file) > 0) {
 		// printf("SE TIENE QUE DIRECCIONAR AL ARCHIVO %s\n", file);
-		return open(file, flags | O_CREAT, S_IRUSR | S_IWUSR); //, O_CREAT, S_IWUSR, S_IRUSR);
+		return open(file,
+		            flags | O_CREAT,
+		            S_IRUSR | S_IWUSR);  //, O_CREAT, S_IWUSR, S_IRUSR);
 	}
 
 	return -1;
 }
 
-void simple_exec(struct execcmd *e){
+
+void 
+simple_exec(struct execcmd *e)
+{
 	set_environ_vars(e->eargv, e->eargc);
 	execvp(e->argv[0], e->argv);
 	unset_environ_vars(e->eargv, e->eargc);
@@ -144,21 +149,23 @@ waitAndGetRet(int pid)
 	return 0;
 }
 
-void divide_pipe(struct pipecmd *p){
+void
+divide_pipe(struct pipecmd *p)
+{
 	int fdPipe[2];
-	if(pipe(fdPipe) < 0){
-		fprintf(stderr,"Pipe creation for divide failed\n");
+	if (pipe(fdPipe) < 0) {
+		fprintf(stderr, "Pipe creation for divide failed\n");
 		_exit(-1);
 	}
 	
 	int pidleft = fork();
 
-	if (pidleft < 0){
-		fprintf(stderr,"Fork for left process failed\n");
+	if (pidleft < 0) {
+		fprintf(stderr, "Fork for left process failed\n");
 		_exit(-1);
 	}
 
-	if (pidleft == 0){
+	if (pidleft == 0) {
 		close(fdPipe[0]);
 		dup2(fdPipe[1], 1);
 		close(fdPipe[1]);
@@ -167,12 +174,11 @@ void divide_pipe(struct pipecmd *p){
 	}
 
 	close(fdPipe[1]);
-	
+
 	int pidright = fork();
 
-	if (pidright < 0){
-		
-		fprintf(stderr,"Fork for right process failed\n");
+	if (pidright < 0) {
+		fprintf(stderr, "Fork for right process failed\n");
 		_exit(-1);
 	}
 
@@ -189,7 +195,6 @@ void divide_pipe(struct pipecmd *p){
 	waitAndGetRet(pidleft);
 
 	waitAndGetRet(pidright);
-
 }
 
 // executes a command - does not return
@@ -202,9 +207,9 @@ void
 exec_cmd(struct cmd *cmd)
 {
 	// To be used in the different cases
-	
+
 	struct backcmd *b;
-	struct execcmd *r;	
+	struct execcmd *r;
 
 	switch (cmd->type) {
 	case EXEC:
@@ -230,47 +235,46 @@ exec_cmd(struct cmd *cmd)
 		// verify if file name's length (in the execcmd struct)
 		// is greater than zero
 		//
-		struct execcmd *r= cmd;
+		struct execcmd *r = cmd;
 		int fdFile = open_redir_fd(r->in_file, O_RDONLY);
-		if (fdFile >= 0){ 
-			//printf("DEBERIA REDIR INPUT A %s \n",&r->in_file[0]);
+		if (fdFile >= 0) {
+			// printf("DEBERIA REDIR INPUT A %s \n",&r->in_file[0]);
 			dup2(fdFile, 0);
 			close(fdFile);
-		} 
-		
-		fdFile = open_redir_fd(r->out_file, O_WRONLY);
-		//printf("DEBERIA REDIR OUTPUT %d\n",fdFile);
-		if (fdFile > 0){ 
-			
-			dup2(fdFile, 1);
-			close(fdFile);
-
 		}
 
-		if(strncmp(r->err_file,REDIR_TO_OUT, 2) == 0){
-			dup2(1, 2); // En vez de un archivo, lo que sea que apunte el stdout =1
-		} else{
+		fdFile = open_redir_fd(r->out_file, O_WRONLY);
+		// printf("DEBERIA REDIR OUTPUT %d\n",fdFile);
+		if (fdFile > 0) {
+			dup2(fdFile, 1);
+			close(fdFile);
+		}
+
+		if (strncmp(r->err_file, REDIR_TO_OUT, 2) == 0) {
+			dup2(1,
+			     2);  // En vez de un archivo, lo que sea que apunte el stdout =1
+		} else {
 			fdFile = open_redir_fd(r->err_file, O_WRONLY);
-			//fprintf(stderr,"DEBERIA REDIR ERR %d\n",fdFile);
-			if (fdFile > 0){
-				//printf("DEBERIA REDIR INPUT A %s ",&r->in_file[0]);
+			// fprintf(stderr,"DEBERIA REDIR ERR %d\n",fdFile);
+			if (fdFile > 0) {
+				// printf("DEBERIA REDIR INPUT A %s ",&r->in_file[0]);
 				dup2(fdFile, 2);
 				close(fdFile);
 			}
 		}
-		//fprintf(stderr,"DEBERIA REDIR ERR %d\n",stderr);
+		// fprintf(stderr,"DEBERIA REDIR ERR %d\n",stderr);
 
-		//printf("SALIÓ TODO BIEN CON LOS ARCHIVOS Y VOY A EJECUTAR: \n");
+		// printf("SALIÓ TODO BIEN CON LOS ARCHIVOS Y VOY A EJECUTAR: \n");
 		simple_exec(r);
 		break;
 	}
 
 	case PIPE: {
 		// pipes two commands
-		//		
+		//
 		divide_pipe((struct pipecmd *) cmd);
-		//printf("Despues del divide pipe\n");
-		
+		// printf("Despues del divide pipe\n");
+
 		// free the memory allocated
 		// for the pipe tree structure
 		free_command(parsed_pipe);

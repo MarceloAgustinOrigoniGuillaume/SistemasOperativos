@@ -1,4 +1,5 @@
 #include "builtin.h"
+#include <string.h>
 
 // returns true if the 'exit' call
 // should be performed
@@ -7,9 +8,7 @@
 int
 exit_shell(char *cmd)
 {
-	// Your code here
-
-	return 0;
+	return (strncmp(cmd, "exit", 4) == 0) ? 1 : 0;
 }
 
 // returns true if "chdir" was performed
@@ -27,9 +26,28 @@ exit_shell(char *cmd)
 int
 cd(char *cmd)
 {
-	// Your code here
+	if (strncmp(cmd, "cd", 2) != 0)
+		return 0;
 
-	return 0;
+	char *path = strtok(cmd, " ");
+	path = strtok(NULL, " ");
+
+	if (path == NULL) {
+		char *home = getenv("HOME");
+		if (chdir(home) < 0) {
+			perror("ERROR: could not change to home directory");
+			return 0;
+		}
+		snprintf(prompt, sizeof prompt, "(%s)", home);
+	} else {
+		if (chdir(path) < 0) {
+			perror("ERROR: Cannot change directory");
+			return 0;
+		}
+		snprintf(prompt, sizeof prompt, "(%s)", path);
+	}
+
+	return 1;
 }
 
 // returns true if 'pwd' was invoked
@@ -40,9 +58,16 @@ cd(char *cmd)
 int
 pwd(char *cmd)
 {
-	// Your code here
-
-	return 0;
+	if (strncmp(cmd, "pwd", 3) != 0)
+		return 0;
+	char *cwd = getcwd(NULL, 0);
+	if (cwd == NULL) {
+		perror("ERROR: could not get current directory");
+		return 0;
+	}
+	printf("%s\n", cwd);
+	free(cwd);
+	return 1;
 }
 
 // returns true if `history` was invoked
