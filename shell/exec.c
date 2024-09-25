@@ -112,13 +112,23 @@ static int
 open_redir_fd(char *file, int flags)
 {
 	if (strlen(file) > 0) {
-		// printf("SE TIENE QUE DIRECCIONAR AL ARCHIVO %s\n", file);
+
+		if (flags == O_RDONLY){
+		    return open(file, flags);
+		}
+		
+		if (flags == O_WRONLY){
+		    return open(file,
+		            flags | O_CREAT | O_TRUNC,
+		            S_IRUSR | S_IWUSR); 
+		}
+		
 		return open(file,
-		            flags | O_CREAT,
-		            S_IRUSR | S_IWUSR);  //, O_CREAT, S_IWUSR, S_IRUSR);
+		            flags,
+		            S_IRUSR | S_IWUSR);  
 	}
 
-	return -1;
+	return -2;
 }
 
 
@@ -222,8 +232,12 @@ exec_cmd(struct cmd *cmd)
 	case BACK: {
 		// runs a command in background
 		//
-		// Your code here
+		// Your code here	
+		setpgid();
+		
 		printf("Background process are not yet implemented\n");
+
+
 		_exit(-1);
 		break;
 	}
@@ -241,6 +255,8 @@ exec_cmd(struct cmd *cmd)
 			// printf("DEBERIA REDIR INPUT A %s \n",&r->in_file[0]);
 			dup2(fdFile, 0);
 			close(fdFile);
+		} else if(fdFile == -1){
+		    _exit(1);
 		}
 
 		fdFile = open_redir_fd(r->out_file, O_WRONLY);
@@ -248,6 +264,8 @@ exec_cmd(struct cmd *cmd)
 		if (fdFile > 0) {
 			dup2(fdFile, 1);
 			close(fdFile);
+		} else if(fdFile == -1){
+		    _exit(1);
 		}
 
 		if (strncmp(r->err_file, REDIR_TO_OUT, 2) == 0) {
@@ -260,6 +278,8 @@ exec_cmd(struct cmd *cmd)
 				// printf("DEBERIA REDIR INPUT A %s ",&r->in_file[0]);
 				dup2(fdFile, 2);
 				close(fdFile);
+			} else if(fdFile == -1){
+		          _exit(1);
 			}
 		}
 		// fprintf(stderr,"DEBERIA REDIR ERR %d\n",stderr);
