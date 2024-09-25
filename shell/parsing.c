@@ -1,4 +1,5 @@
 #include "parsing.h"
+#include "printstatus.h"
 
 // parses an argument of the command stream input
 static char *
@@ -101,9 +102,35 @@ parse_environ_var(struct execcmd *c, char *arg)
 static char *
 expand_environ_var(char *arg)
 {
-	// Your code here
+    if (arg[0] == '$') {
+		if (strcmp(arg, "$?") == 0) {
+			char *status_str; 
+            snprintf(status_str, 4, "%d", status); // no debería ocupar más de un 4 bytes
+			return status_str;
+		} else {
+			char *name = arg + 1;
+			char *value = getenv(name);
 
-	return arg;
+			if (value == NULL || strlen(value) == 0) {
+				arg[0] = '\0';
+				return arg;
+			}
+
+			size_t value_len = strlen(value);
+			if (value_len >= strlen(arg)) {
+				char *arg_resize = realloc(arg, value_len + 1);
+				if (!arg_resize) {
+					perror("Error de memoria");
+					exit(1); 
+				}
+				arg = arg_resize; 
+			}
+
+			strncpy(arg, value, value_len + 1);
+		}
+    }
+
+    return arg;
 }
 
 // parses one single command having into account:
@@ -133,6 +160,8 @@ parse_exec(char *buf_cmd)
 			continue;
 
 		tok = expand_environ_var(tok);
+		if (strlen(tok) == 0)
+			continue;
 
 		c->argv[argc++] = tok;
 	}

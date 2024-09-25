@@ -29,6 +29,8 @@
 #define END_STRING '\0'
 #define END_LINE '\n'
 #define SPACE ' '
+#define ENV_VAR_SYMBOL '$'
+#define EQUAL_SYMBOL '='
 
 #define BUFLEN 1024
 #define PRMTLEN 1024

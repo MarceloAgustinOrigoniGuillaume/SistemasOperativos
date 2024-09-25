@@ -53,7 +53,49 @@ get_environ_value(char *arg, char *value, int idx)
 static void
 set_environ_vars(char **eargv, int eargc)
 {
-	// Your code here
+	
+
+	for (int i=0; i < eargc; i++) {
+		int idx = block_contains(eargv[i], EQUAL_SYMBOL);
+		if (idx < 0) {
+			continue;
+		}
+
+		char *key = malloc(ARGSIZE);
+		char *value = malloc(ARGSIZE);
+
+		get_environ_key(eargv[i], key);
+		get_environ_value(eargv[i], value, idx);
+
+		int result = setenv(key, value, 1); //no quiero que sobreescriba.
+
+		free(key);
+		free(value);
+
+		if (result != 0) {
+			perror("Error en asignación de variable de entorno.");
+			_exit(-1);
+		}
+	}
+}
+
+static void
+unset_environ_vars(char **eargv, int eargc)
+{
+	for (int i=0; i < eargc; i++) {
+		char *key = malloc(ARGSIZE);
+
+		get_environ_key(eargv[i], key);
+
+		int result = unsetenv(key); 
+		
+		free(key);
+		
+		if (result != 0) {
+			perror("Error en la eliminación de variable de entorno.");
+			_exit(-1);
+		}
+	}
 }
 
 // opens the file in which the stdin/stdout/stderr
@@ -79,10 +121,14 @@ open_redir_fd(char *file, int flags)
 	return -1;
 }
 
-void
+
+void 
 simple_exec(struct execcmd *e)
 {
+	set_environ_vars(e->eargv, e->eargc);
 	execvp(e->argv[0], e->argv);
+	unset_environ_vars(e->eargv, e->eargc);
+
 	printf("Commands are not yet implemented\n");
 	_exit(-1);
 }
@@ -111,9 +157,8 @@ divide_pipe(struct pipecmd *p)
 		fprintf(stderr, "Pipe creation for divide failed\n");
 		_exit(-1);
 	}
-
+	
 	int pidleft = fork();
-
 
 	if (pidleft < 0) {
 		fprintf(stderr, "Fork for left process failed\n");
@@ -137,19 +182,13 @@ divide_pipe(struct pipecmd *p)
 		_exit(-1);
 	}
 
-
-	if (pidright == 0) {
-		// if(p->rightcmd->type != PIPE){
-		//	struct execcmd *temp = p->rightcmd;
-		// printf("DEBERIA EJECUTAR PIPE?\n");
-		// printf("DERECHA CON %s %s",temp->argv[0],temp->argv[1]);
-		//}
-
+	if (pidright == 0){
 
 		dup2(fdPipe[0], 0);
 		close(fdPipe[0]);
 
 		exec_cmd(p->rightcmd);
+
 	}
 	close(fdPipe[0]);
 
@@ -172,12 +211,12 @@ exec_cmd(struct cmd *cmd)
 	struct backcmd *b;
 	struct execcmd *r;
 
-
 	switch (cmd->type) {
 	case EXEC:
 		// spawns a command
 		//
-		simple_exec((struct execcmd *) cmd);
+		r = (struct execcmd *) cmd;
+		simple_exec(r);
 		break;
 
 	case BACK: {
