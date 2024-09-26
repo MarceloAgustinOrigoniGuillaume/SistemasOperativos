@@ -46,7 +46,7 @@ sethandler()
 	struct sigaction sa;
 	sa.sa_handler = &handle_end;
 	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART;  // SA_RESTART | SA_ONSTACK;
+	sa.sa_flags = SA_RESTART | SA_ONSTACK;
 	if (sigaction(SIGCHLD, &sa, NULL) < 0) {
 		printf_debug("sigaction failed");
 		_exit(EXIT_FAILURE);
