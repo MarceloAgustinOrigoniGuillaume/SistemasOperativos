@@ -50,4 +50,5 @@
 
 #define EXIT_SHELL 1
 
+#define EXIT_FAILURE 1
 #endif  // DEFS_H

@@ -218,7 +218,6 @@ exec_cmd(struct cmd *cmd)
 {
 	// To be used in the different cases
 
-	struct backcmd *b;
 	struct execcmd *r;
 
 	switch (cmd->type) {
@@ -232,13 +231,9 @@ exec_cmd(struct cmd *cmd)
 	case BACK: {
 		// runs a command in background
 		//
-		// Your code here	
-		setpgid();
-		
-		printf("Background process are not yet implemented\n");
-
-
-		_exit(-1);
+		// Your code here
+		struct backcmd *b = cmd;
+		exec_cmd(b->c);
 		break;
 	}
 
@@ -248,11 +243,9 @@ exec_cmd(struct cmd *cmd)
 		// To check if a redirection has to be performed
 		// verify if file name's length (in the execcmd struct)
 		// is greater than zero
-		//
 		struct execcmd *r = cmd;
 		int fdFile = open_redir_fd(r->in_file, O_RDONLY);
 		if (fdFile >= 0) {
-			// printf("DEBERIA REDIR INPUT A %s \n",&r->in_file[0]);
 			dup2(fdFile, 0);
 			close(fdFile);
 		} else if(fdFile == -1){
@@ -260,7 +253,6 @@ exec_cmd(struct cmd *cmd)
 		}
 
 		fdFile = open_redir_fd(r->out_file, O_WRONLY);
-		// printf("DEBERIA REDIR OUTPUT %d\n",fdFile);
 		if (fdFile > 0) {
 			dup2(fdFile, 1);
 			close(fdFile);
@@ -273,18 +265,13 @@ exec_cmd(struct cmd *cmd)
 			     2);  // En vez de un archivo, lo que sea que apunte el stdout =1
 		} else {
 			fdFile = open_redir_fd(r->err_file, O_WRONLY);
-			// fprintf(stderr,"DEBERIA REDIR ERR %d\n",fdFile);
 			if (fdFile > 0) {
-				// printf("DEBERIA REDIR INPUT A %s ",&r->in_file[0]);
 				dup2(fdFile, 2);
 				close(fdFile);
 			} else if(fdFile == -1){
 		          _exit(1);
 			}
 		}
-		// fprintf(stderr,"DEBERIA REDIR ERR %d\n",stderr);
-
-		// printf("SALIÓ TODO BIEN CON LOS ARCHIVOS Y VOY A EJECUTAR: \n");
 		simple_exec(r);
 		break;
 	}
@@ -293,7 +280,6 @@ exec_cmd(struct cmd *cmd)
 		// pipes two commands
 		//
 		divide_pipe((struct pipecmd *) cmd);
-		// printf("Despues del divide pipe\n");
 
 		// free the memory allocated
 		// for the pipe tree structure
