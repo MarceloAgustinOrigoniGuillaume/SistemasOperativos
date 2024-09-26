@@ -11,42 +11,46 @@
 
 char prompt[PRMTLEN] = { 0 };
 
-static void handle_end(int num){
-    int status;    
-    // Wait for any process end with group pid == main_pid.
-    pid_t pid=  waitpid(0, &status, WNOHANG);
-    
-    if(pid < 0){
-         return; // Not a background process..
-    }
-    
-    printf_debug("==> terminado: %d\n", pid);
+static void
+handle_end(int num)
+{
+	int status;
+	// Wait for any process end with group pid == main_pid.
+	pid_t pid = waitpid(0, &status, WNOHANG);
+
+	if (pid < 0) {
+		return;  // Not a background process..
+	}
+
+	printf_debug("==> terminado: %d\n", pid);
 }
 
-static void sethandler(){
-     stack_t stack;
-     stack.ss_sp = malloc(SIGSTKSZ);
-     if (stack.ss_sp == NULL) {
-         printf_debug("stack malloc failed");
-         _exit(EXIT_FAILURE);
-     }
+static void
+sethandler()
+{
+	stack_t stack;
+	stack.ss_sp = malloc(SIGSTKSZ);
+	if (stack.ss_sp == NULL) {
+		printf_debug("stack malloc failed");
+		_exit(EXIT_FAILURE);
+	}
 
-     stack.ss_size = SIGSTKSZ;
-     stack.ss_flags = 0;
-     if (sigaltstack(&stack, NULL) == -1) {
-         printf("ENTRO SET HAND %d\n",errno);
-         printf_debug("sigaltstack failed");
-         _exit(EXIT_FAILURE);
-     }
-     
-     struct sigaction sa;
-     sa.sa_handler = &handle_end;
-     sigemptyset(&sa.sa_mask);
-     sa.sa_flags = SA_RESTART;//SA_RESTART | SA_ONSTACK;
-     if(sigaction(SIGCHLD, &sa, NULL) < 0){
-         printf_debug("sigaction failed");
-          _exit(EXIT_FAILURE);
-     }
+	stack.ss_size = SIGSTKSZ;
+	stack.ss_flags = 0;
+	if (sigaltstack(&stack, NULL) == -1) {
+		printf("ENTRO SET HAND %d\n", errno);
+		printf_debug("sigaltstack failed");
+		_exit(EXIT_FAILURE);
+	}
+
+	struct sigaction sa;
+	sa.sa_handler = &handle_end;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART;  // SA_RESTART | SA_ONSTACK;
+	if (sigaction(SIGCHLD, &sa, NULL) < 0) {
+		printf_debug("sigaction failed");
+		_exit(EXIT_FAILURE);
+	}
 }
 
 

@@ -36,19 +36,20 @@ run_cmd(char *cmd)
 
 	// forks and run the command
 	if ((p = fork()) == 0) {
-	        // Cambia el group pid, no uses el del padre.
-	        if(parsed->type != BACK){
-	            if(setpgid(getpid(), getpid())<0){
-	                  printf_debug("FAILED TO SET PGID ON EXEC FORK\n");
-	                  _exit(EXIT_FAILURE);
-	            }
-	            
-		    // keep a reference
-		    // to the parsed pipe cmd
-		    // so it can be freed later
-		    if (parsed->type == PIPE)
-			    parsed_pipe = parsed;
-	        }
+		// Cambia el group pid, no uses el del padre.
+		if (parsed->type != BACK) {
+			if (setpgid(getpid(), getpid()) < 0) {
+				printf_debug(
+				        "FAILED TO SET PGID ON EXEC FORK\n");
+				_exit(EXIT_FAILURE);
+			}
+
+			// keep a reference
+			// to the parsed pipe cmd
+			// so it can be freed later
+			if (parsed->type == PIPE)
+				parsed_pipe = parsed;
+		}
 
 		exec_cmd(parsed);
 	}
@@ -64,14 +65,14 @@ run_cmd(char *cmd)
 	// 	'print_back_info()'
 	//
 	// Your code here
-	if (parsed->type != BACK){
-	      // waits for the process to finish
-	      waitpid(p, &status, 0);
+	if (parsed->type != BACK) {
+		// waits for the process to finish
+		waitpid(p, &status, 0);
 
-	      print_status_info(parsed);
-	    
-	} else{
-	      print_back_info(parsed);
+		print_status_info(parsed);
+
+	} else {
+		print_back_info(parsed);
 	}
 
 	free_command(parsed);

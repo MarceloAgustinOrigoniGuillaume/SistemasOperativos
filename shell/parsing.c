@@ -102,10 +102,13 @@ parse_environ_var(struct execcmd *c, char *arg)
 static char *
 expand_environ_var(char *arg)
 {
-    if (arg[0] == '$') {
+	if (arg[0] == '$') {
 		if (strcmp(arg, "$?") == 0) {
-			char *status_str; 
-            snprintf(status_str, 4, "%d", status); // no debería ocupar más de un 4 bytes
+			char *status_str;
+			snprintf(status_str,
+			         4,
+			         "%d",
+			         status);  // no debería ocupar más de un 4 bytes
 			return status_str;
 		} else {
 			char *name = arg + 1;
@@ -121,16 +124,16 @@ expand_environ_var(char *arg)
 				char *arg_resize = realloc(arg, value_len + 1);
 				if (!arg_resize) {
 					perror("Error de memoria");
-					exit(1); 
+					exit(1);
 				}
-				arg = arg_resize; 
+				arg = arg_resize;
 			}
 
 			strncpy(arg, value, value_len + 1);
 		}
-    }
+	}
 
-    return arg;
+	return arg;
 }
 
 // parses one single command having into account:
