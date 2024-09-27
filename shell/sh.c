@@ -16,7 +16,6 @@ handle_end(int num)
 {
         // No tomes el handler para el proceso intermedio de los pipe.
         if(getpid() != pid_main){
-              //printf_debug("==> DESDE PIPE %d pgrp %d ppid %d\n", getpid(), getpgrp(),getppid());
               return;
         }
 	int status;
@@ -28,7 +27,7 @@ handle_end(int num)
 		return;  // Not a background process..
 	}
 
-	printf_debug("==> terminado: %d\n", pid);
+	printf("==> terminado: %d\n", pid);
 }
 
 static void

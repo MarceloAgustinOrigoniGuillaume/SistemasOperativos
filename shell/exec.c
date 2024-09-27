@@ -73,7 +73,7 @@ set_environ_vars(char **eargv, int eargc)
 
 		if (result != 0) {
 			perror("Error en asignación de variable de entorno.");
-			_exit(-1);
+			_exit(EXIT_FAILURE);
 		}
 	}
 }
@@ -93,7 +93,7 @@ unset_environ_vars(char **eargv, int eargc)
 		if (result != 0) {
 			perror("Error en la eliminación de variable de "
 			       "entorno.");
-			_exit(-1);
+			_exit(EXIT_FAILURE);
 		}
 	}
 }
@@ -137,7 +137,7 @@ simple_exec(struct execcmd *e)
 	unset_environ_vars(e->eargv, e->eargc);
 
 	printf("Commands are not yet implemented\n");
-	_exit(-1);
+	_exit(EXIT_FAILURE);
 }
 
 
@@ -156,20 +156,20 @@ waitAndGetRet(int pid)
 	return 0;
 }
 
-void
+int
 divide_pipe(struct pipecmd *p)
 {
 	int fdPipe[2];
 	if (pipe(fdPipe) < 0) {
 		fprintf(stderr, "Pipe creation for divide failed\n");
-		_exit(-1);
+		_exit(EXIT_FAILURE);
 	}
 
 	int pidleft = fork();
 
 	if (pidleft < 0) {
 		fprintf(stderr, "Fork for left process failed\n");
-		_exit(-1);
+		_exit(EXIT_FAILURE);
 	}
 
 	if (pidleft == 0) {
@@ -186,7 +186,7 @@ divide_pipe(struct pipecmd *p)
 
 	if (pidright < 0) {
 		fprintf(stderr, "Fork for right process failed\n");
-		_exit(-1);
+		_exit(EXIT_FAILURE);
 	}
 
 	if (pidright == 0) {
@@ -244,7 +244,7 @@ exec_cmd(struct cmd *cmd)
 			dup2(fdFile, 0);
 			close(fdFile);
 		} else if (fdFile == -1) {
-			_exit(1);
+			_exit(EXIT_FAILURE);
 		}
 
 		fdFile = open_redir_fd(r->out_file, O_WRONLY);
@@ -252,7 +252,7 @@ exec_cmd(struct cmd *cmd)
 			dup2(fdFile, 1);
 			close(fdFile);
 		} else if (fdFile == -1) {
-			_exit(1);
+			_exit(EXIT_FAILURE);
 		}
 
 		if (strncmp(r->err_file, REDIR_TO_OUT, 2) == 0) {
@@ -264,7 +264,7 @@ exec_cmd(struct cmd *cmd)
 				dup2(fdFile, 2);
 				close(fdFile);
 			} else if (fdFile == -1) {
-				_exit(1);
+				_exit(EXIT_FAILURE);
 			}
 		}
 		simple_exec(r);
@@ -274,12 +274,12 @@ exec_cmd(struct cmd *cmd)
 	case PIPE: {
 		// pipes two commands
 		//
-		divide_pipe((struct pipecmd *) cmd);
+		int ret = divide_pipe((struct pipecmd *) cmd);
 
 		// free the memory allocated
 		// for the pipe tree structure
 		free_command(parsed_pipe);
-		_exit(-1);
+		_exit(ret);
 		break;
 	}
 	}
