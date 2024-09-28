@@ -43,9 +43,12 @@ Y luego hace la redireccion copiando al stderr el stdout. Es decir ambos al out.
 
 # Responder: ¿Entre cd y pwd, alguno de los dos se podría implementar sin necesidad de ser built-in? ¿Por qué? ¿Si la respuesta es sí, cuál es el motivo, entonces, de hacerlo como built-in? (para esta última pregunta pensar en los built-in como true y false)
 
+El único que puede ser implementado sin ser built-in es pwd ya que solo muestra la ruta actual, sin cambiar el estado de la shell, no como cd que si se ejecutase en un proceso aparte, solo cambiaría el directorio de ese proceso hijo.
+Se hace como built-in principalmente por temas de eficiencia, es mucho más rápido que tener que iniciar un nuevo proceso y cargarlo en memoria, similar a true y false, comandos built-in que solo devuelven 0 y 1, sería muy poco eficiente crear un nuevo proceso solo para eso.
 
-# Responder:
-    ¿Por qué es necesario el uso de señales?
+# Responder: ¿Por qué es necesario el uso de señales?
+
+El uso de señales nos permite reaccionar de manera automática a los eventos del sistema, como la señal sigchild que se emite cada vez que un proceso hijo termina, permitiendo configurar un handler que libera todos sus recursos, evitando la creacion de procesos zombie 
 
 
 
