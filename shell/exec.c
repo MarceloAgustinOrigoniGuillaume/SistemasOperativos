@@ -136,7 +136,8 @@ simple_exec(struct execcmd *e)
 	execvp(e->argv[0], e->argv);
 	unset_environ_vars(e->eargv, e->eargc);
 
-	printf("Commands are not yet implemented\n");
+	printf_debug("execvp failed\n");
+	free_command(e);
 	_exit(EXIT_FAILURE);
 }
 

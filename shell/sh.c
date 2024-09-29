@@ -14,12 +14,12 @@ static pid_t pid_main;
 static void
 handle_end(int num)
 {
-        // No tomes el handler para el proceso intermedio de los pipe.
-        if(getpid() != pid_main){
-              return;
-        }
+	// No tomes el handler para el proceso intermedio de los pipe.
+	if (getpid() != pid_main) {
+		return;
+	}
 	int status;
-	
+
 	// Wait for any process end with group pid == main_pid.
 	pid_t pid = waitpid(0, &status, WNOHANG);
 
@@ -89,7 +89,7 @@ init_shell()
 int
 main(void)
 {
-        pid_main = getpid();
+	pid_main = getpid();
 	sethandler();
 	init_shell();
 
