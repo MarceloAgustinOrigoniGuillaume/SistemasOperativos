@@ -46,9 +46,24 @@ Y luego hace la redireccion copiando al stderr el stdout. Es decir ambos al out.
 El único que puede ser implementado sin ser built-in es pwd ya que solo muestra la ruta actual, sin cambiar el estado de la shell, no como cd que si se ejecutase en un proceso aparte, solo cambiaría el directorio de ese proceso hijo.
 Se hace como built-in principalmente por temas de eficiencia, es mucho más rápido que tener que iniciar un nuevo proceso y cargarlo en memoria, similar a true y false, comandos built-in que solo devuelven 0 y 1, sería muy poco eficiente crear un nuevo proceso solo para eso.
 
+En bash se tiene varias 'palabras magicas' 
+$# = te retorna la cantidad de parametros pasada al programa.
+$@ = te expande los parametros en una lista dentro de un .sh
+
+El $# se podria usar para saber si un parametro fue definido. Aunque haya otras maneras.
+```if [ $# -gt 1 ];then``` implicaria almenos hay un parametro.
+
+$@ sirve no solo para mandar todos los parametros a un programa interno. Tambien permite remover parametros iniciales.
+```${@:2} ``` tomaria todos menos el primer parametro pasado.
+
+$! = retorna el pid del ultimo proceso
+
+Esta es similar al $?, pero tendra mas sentido a la hora de ejecutar un proceso background.
+
+
 # Responder: ¿Por qué es necesario el uso de señales?
 
-El uso de señales nos permite reaccionar de manera automática a los eventos del sistema, como la señal sigchild que se emite cada vez que un proceso hijo termina, permitiendo configurar un handler que libera todos sus recursos, evitando la creacion de procesos zombie 
+El uso de señales nos permite reaccionar de manera automática a los eventos del sistema, como la señal sigchild que se emite cada vez que un proceso hijo termina, permitiendo configurar un handler que libera todos sus recursos, evitando la creacion de procesos zombie. Pero de forma no bloqueante. Similar pasaria con otras señales, con el SIGINT para el control c. Te permitiria liberar recursos. O incluso evitar la terminacion. Aunque hay señales que no pueden ser sobreescritas como el process KILL.
 
 
 
