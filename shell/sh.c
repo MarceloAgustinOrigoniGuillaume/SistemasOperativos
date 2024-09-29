@@ -9,6 +9,8 @@
 #include "errno.h"
 
 
+stack_t STACK;
+
 char prompt[PRMTLEN] = { 0 };
 static pid_t pid_main;
 static void
@@ -35,6 +37,7 @@ sethandler()
 {
 	stack_t stack;
 	stack.ss_sp = malloc(SIGSTKSZ);
+	STACK = stack;
 	if (stack.ss_sp == NULL) {
 		printf_debug("stack malloc failed");
 		_exit(EXIT_FAILURE);
@@ -56,6 +59,7 @@ sethandler()
 		printf_debug("sigaction failed");
 		_exit(EXIT_FAILURE);
 	}
+
 }
 
 
@@ -94,6 +98,9 @@ main(void)
 	init_shell();
 
 	run_shell();
+
+	if (STACK.ss_sp)
+		free(STACK.ss_sp);
 
 	return 0;
 }
