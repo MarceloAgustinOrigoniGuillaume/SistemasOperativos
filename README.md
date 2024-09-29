@@ -11,7 +11,9 @@ Mostrar qué sucede con la salida de cat out.txt en el ejemplo.
 Luego repetirlo, invirtiendo el orden de las redirecciones (es decir, 2>&1 >out.txt). ¿Cambió algo? Compararlo con el comportamiento en bash(1).
 
 
-```ls -C /home /noexiste > err.txt 2>&1 > out.txt```
+```
+ls -C /home /noexiste > err.txt 2>&1 > out.txt
+```
 En el bash:
 La secuencia de lo que hace es "> err.txt" apunta el stdout (1) a err.txt
 Despues "2>&1" apunta 2, stderr, a lo que apunta 1, stdout. Es decir err.txt
@@ -32,26 +34,38 @@ Y luego hace la redireccion copiando al stderr el stdout. Es decir ambos al out.
 En la bash se muestra el exit code del ultimo. En la implementacion de shell no esta predefinido pero nuestra shell en teoria retorna el exit code del ultimo proceso del pipe tambien.
 
 En la bash
-```ls -C /noexiste``` sale con exit code 2.
+```
+ls -C /noexiste
+```
+
+sale con exit code 2.
 Ya que el ls falla al no existir.
 
-```ls -C /noexiste | echo "nuevo proceso piped"``` sale con exit code 0.
+```
+ls -C /noexiste | echo "nuevo proceso piped"
+```
+sale con exit code 0.
 Hipoteticamente porque el echo es el ultimo proceso del pipe
 
-``` echo "nuevo proceso piped" | ls -C /noexiste ``` sale con exit code 2.
+```
+echo "nuevo proceso piped" | ls -C /noexiste 
+```
+sale con exit code 2.
 Hipoteticamente porque el ls el ultimo proceso del pipe.
 
 
 
 
-# Responder: ¿Por qué es necesario hacerlo luego de la llamada a fork(2)?
-Luego de la llamada fork se crean dos procesos distintos. Ambos deben salir o terminar en algun momento. Si no se hiciera exit en el hijo por ejemplo tendria el mismo main y resto de codigo subyacente. Lo que de no hacer exit en el momento significaria mas cambios para tener en cuenta ambas posibilidades.
-
+# Soportar variables de entorno temporales. Responder: ¿Por qué es necesario hacerlo luego de la llamada a fork(2)?
+Al hacer fork se comparte el env del proceso. Copiando variables de entorno. Lo que no es deseado en la funcionalidad esperada. Que es que sea por proceso hijo del pipe.
 
 # Responder: En algunos de los wrappers de la familia de funciones de exec(3) (las que finalizan con la letra e), se les puede pasar un tercer argumento (o una lista de argumentos dependiendo del caso), con nuevas variables de entorno para la ejecución de ese proceso. Supongamos, entonces, que en vez de utilizar setenv(3) por cada una de las variables, se guardan en un arreglo y se lo coloca en el tercer argumento de una de las funciones de exec(3).
 
     ¿El comportamiento resultante es el mismo que en el primer caso? Explicar qué sucede y por qué.
     Describir brevemente (sin implementar) una posible implementación para que el comportamiento sea el mismo.
+
+Para poder hacer tenga el mismo efecto se deberia agrega a esa lista de argumentos/variables de entorno. Todas las variables del entorno anterior. Antes de hacer las modificaciones especificas.
+
 
 
 # Responder: Investigar al menos otras tres variables mágicas estándar, y describir su propósito.
@@ -63,10 +77,16 @@ $# = te retorna la cantidad de parametros pasada al programa.
 $@ = te expande los parametros en una lista dentro de un .sh
 
 El $# se podria usar para saber si un parametro fue definido. Aunque haya otras maneras.
-```if [ $# -gt 1 ];then``` implicaria almenos hay un parametro.
+```
+if [ $# -gt 1 ];then
+```
+implicaria almenos hay un parametro.
 
 $@ sirve no solo para mandar todos los parametros a un programa interno. Tambien permite remover parametros iniciales.
-```${@:2} ``` tomaria todos menos el primer parametro pasado.
+```
+${@:2}
+```
+tomaria todos menos el primer parametro pasado.
 
 $! = retorna el pid del ultimo proceso
 
