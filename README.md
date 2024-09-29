@@ -28,9 +28,26 @@ Y luego hace la redireccion copiando al stderr el stdout. Es decir ambos al out.
 
     ¿Cambia en algo?
     ¿Qué ocurre si, en un pipe, alguno de los comandos falla? Mostrar evidencia (e.g. salidas de terminal) de este comportamiento usando bash. Comparar con su implementación.
+    
+En la bash se muestra el exit code del ultimo. En la implementacion de shell no esta predefinido pero nuestra shell en teoria retorna el exit code del ultimo proceso del pipe tambien.
+
+En la bash
+```ls -C /noexiste``` sale con exit code 2.
+Ya que el ls falla al no existir.
+
+```ls -C /noexiste | echo "nuevo proceso piped"``` sale con exit code 0.
+Hipoteticamente porque el echo es el ultimo proceso del pipe
+
+``` echo "nuevo proceso piped" | ls -C /noexiste ``` sale con exit code 2.
+Hipoteticamente porque el ls el ultimo proceso del pipe.
+
+
 
 
 # Responder: ¿Por qué es necesario hacerlo luego de la llamada a fork(2)?
+Luego de la llamada fork se crean dos procesos distintos. Ambos deben salir o terminar en algun momento. Si no se hiciera exit en el hijo por ejemplo tendria el mismo main y resto de codigo subyacente. Lo que de no hacer exit en el momento significaria mas cambios para tener en cuenta ambas posibilidades.
+
+
 # Responder: En algunos de los wrappers de la familia de funciones de exec(3) (las que finalizan con la letra e), se les puede pasar un tercer argumento (o una lista de argumentos dependiendo del caso), con nuevas variables de entorno para la ejecución de ese proceso. Supongamos, entonces, que en vez de utilizar setenv(3) por cada una de las variables, se guardan en un arreglo y se lo coloca en el tercer argumento de una de las funciones de exec(3).
 
     ¿El comportamiento resultante es el mismo que en el primer caso? Explicar qué sucede y por qué.
@@ -40,11 +57,6 @@ Y luego hace la redireccion copiando al stderr el stdout. Es decir ambos al out.
 # Responder: Investigar al menos otras tres variables mágicas estándar, y describir su propósito.
 
     Incluir un ejemplo de su uso en bash (u otra terminal similar).
-
-# Responder: ¿Entre cd y pwd, alguno de los dos se podría implementar sin necesidad de ser built-in? ¿Por qué? ¿Si la respuesta es sí, cuál es el motivo, entonces, de hacerlo como built-in? (para esta última pregunta pensar en los built-in como true y false)
-
-El único que puede ser implementado sin ser built-in es pwd ya que solo muestra la ruta actual, sin cambiar el estado de la shell, no como cd que si se ejecutase en un proceso aparte, solo cambiaría el directorio de ese proceso hijo.
-Se hace como built-in principalmente por temas de eficiencia, es mucho más rápido que tener que iniciar un nuevo proceso y cargarlo en memoria, similar a true y false, comandos built-in que solo devuelven 0 y 1, sería muy poco eficiente crear un nuevo proceso solo para eso.
 
 En bash se tiene varias 'palabras magicas' 
 $# = te retorna la cantidad de parametros pasada al programa.
@@ -60,6 +72,11 @@ $! = retorna el pid del ultimo proceso
 
 Esta es similar al $?, pero tendra mas sentido a la hora de ejecutar un proceso background.
 
+
+# Responder: ¿Entre cd y pwd, alguno de los dos se podría implementar sin necesidad de ser built-in? ¿Por qué? ¿Si la respuesta es sí, cuál es el motivo, entonces, de hacerlo como built-in? (para esta última pregunta pensar en los built-in como true y false)
+
+El único que puede ser implementado sin ser built-in es pwd ya que solo muestra la ruta actual, sin cambiar el estado de la shell, no como cd que si se ejecutase en un proceso aparte, solo cambiaría el directorio de ese proceso hijo.
+Se hace como built-in principalmente por temas de eficiencia, es mucho más rápido que tener que iniciar un nuevo proceso y cargarlo en memoria, similar a true y false, comandos built-in que solo devuelven 0 y 1, sería muy poco eficiente crear un nuevo proceso solo para eso.
 
 # Responder: ¿Por qué es necesario el uso de señales?
 
