@@ -53,9 +53,7 @@ get_environ_value(char *arg, char *value, int idx)
 static void
 set_environ_vars(char **eargv, int eargc)
 {
-	
-
-	for (int i=0; i < eargc; i++) {
+	for (int i = 0; i < eargc; i++) {
 		int idx = block_contains(eargv[i], EQUAL_SYMBOL);
 		if (idx < 0) {
 			continue;
@@ -67,14 +65,15 @@ set_environ_vars(char **eargv, int eargc)
 		get_environ_key(eargv[i], key);
 		get_environ_value(eargv[i], value, idx);
 
-		int result = setenv(key, value, 1); //no quiero que sobreescriba.
+		int result =
+		        setenv(key, value, 1);  // no quiero que sobreescriba.
 
 		free(key);
 		free(value);
 
 		if (result != 0) {
 			perror("Error en asignación de variable de entorno.");
-			_exit(-1);
+			_exit(EXIT_FAILURE);
 		}
 	}
 }
@@ -82,18 +81,19 @@ set_environ_vars(char **eargv, int eargc)
 static void
 unset_environ_vars(char **eargv, int eargc)
 {
-	for (int i=0; i < eargc; i++) {
+	for (int i = 0; i < eargc; i++) {
 		char *key = malloc(ARGSIZE);
 
 		get_environ_key(eargv[i], key);
 
-		int result = unsetenv(key); 
-		
+		int result = unsetenv(key);
+
 		free(key);
-		
+
 		if (result != 0) {
-			perror("Error en la eliminación de variable de entorno.");
-			_exit(-1);
+			perror("Error en la eliminación de variable de "
+			       "entorno.");
+			_exit(EXIT_FAILURE);
 		}
 	}
 }
@@ -112,27 +112,24 @@ static int
 open_redir_fd(char *file, int flags)
 {
 	if (strlen(file) > 0) {
+		if (flags == O_RDONLY) {
+			return open(file, flags);
+		}
 
-		if (flags == O_RDONLY){
-		    return open(file, flags);
+		if (flags == O_WRONLY) {
+			return open(file,
+			            flags | O_CREAT | O_TRUNC,
+			            S_IRUSR | S_IWUSR);
 		}
-		
-		if (flags == O_WRONLY){
-		    return open(file,
-		            flags | O_CREAT | O_TRUNC,
-		            S_IRUSR | S_IWUSR); 
-		}
-		
-		return open(file,
-		            flags,
-		            S_IRUSR | S_IWUSR);  
+
+		return open(file, flags, S_IRUSR | S_IWUSR);
 	}
 
 	return -2;
 }
 
 
-void 
+void
 simple_exec(struct execcmd *e)
 {
 	set_environ_vars(e->eargv, e->eargc);
@@ -140,7 +137,7 @@ simple_exec(struct execcmd *e)
 	unset_environ_vars(e->eargv, e->eargc);
 
 	printf("Commands are not yet implemented\n");
-	_exit(-1);
+	_exit(EXIT_FAILURE);
 }
 
 
@@ -159,20 +156,20 @@ waitAndGetRet(int pid)
 	return 0;
 }
 
-void
+int
 divide_pipe(struct pipecmd *p)
 {
 	int fdPipe[2];
 	if (pipe(fdPipe) < 0) {
 		fprintf(stderr, "Pipe creation for divide failed\n");
-		_exit(-1);
+		_exit(EXIT_FAILURE);
 	}
-	
+
 	int pidleft = fork();
 
 	if (pidleft < 0) {
 		fprintf(stderr, "Fork for left process failed\n");
-		_exit(-1);
+		_exit(EXIT_FAILURE);
 	}
 
 	if (pidleft == 0) {
@@ -189,16 +186,14 @@ divide_pipe(struct pipecmd *p)
 
 	if (pidright < 0) {
 		fprintf(stderr, "Fork for right process failed\n");
-		_exit(-1);
+		_exit(EXIT_FAILURE);
 	}
 
-	if (pidright == 0){
-
+	if (pidright == 0) {
 		dup2(fdPipe[0], 0);
 		close(fdPipe[0]);
 
 		exec_cmd(p->rightcmd);
-
 	}
 	close(fdPipe[0]);
 
@@ -218,7 +213,6 @@ exec_cmd(struct cmd *cmd)
 {
 	// To be used in the different cases
 
-	struct backcmd *b;
 	struct execcmd *r;
 
 	switch (cmd->type) {
@@ -232,13 +226,9 @@ exec_cmd(struct cmd *cmd)
 	case BACK: {
 		// runs a command in background
 		//
-		// Your code here	
-		setpgid();
-		
-		printf("Background process are not yet implemented\n");
-
-
-		_exit(-1);
+		// Your code here
+		struct backcmd *b = cmd;
+		exec_cmd(b->c);
 		break;
 	}
 
@@ -248,24 +238,21 @@ exec_cmd(struct cmd *cmd)
 		// To check if a redirection has to be performed
 		// verify if file name's length (in the execcmd struct)
 		// is greater than zero
-		//
 		struct execcmd *r = cmd;
 		int fdFile = open_redir_fd(r->in_file, O_RDONLY);
 		if (fdFile >= 0) {
-			// printf("DEBERIA REDIR INPUT A %s \n",&r->in_file[0]);
 			dup2(fdFile, 0);
 			close(fdFile);
-		} else if(fdFile == -1){
-		    _exit(1);
+		} else if (fdFile == -1) {
+			_exit(EXIT_FAILURE);
 		}
 
 		fdFile = open_redir_fd(r->out_file, O_WRONLY);
-		// printf("DEBERIA REDIR OUTPUT %d\n",fdFile);
 		if (fdFile > 0) {
 			dup2(fdFile, 1);
 			close(fdFile);
-		} else if(fdFile == -1){
-		    _exit(1);
+		} else if (fdFile == -1) {
+			_exit(EXIT_FAILURE);
 		}
 
 		if (strncmp(r->err_file, REDIR_TO_OUT, 2) == 0) {
@@ -273,18 +260,13 @@ exec_cmd(struct cmd *cmd)
 			     2);  // En vez de un archivo, lo que sea que apunte el stdout =1
 		} else {
 			fdFile = open_redir_fd(r->err_file, O_WRONLY);
-			// fprintf(stderr,"DEBERIA REDIR ERR %d\n",fdFile);
 			if (fdFile > 0) {
-				// printf("DEBERIA REDIR INPUT A %s ",&r->in_file[0]);
 				dup2(fdFile, 2);
 				close(fdFile);
-			} else if(fdFile == -1){
-		          _exit(1);
+			} else if (fdFile == -1) {
+				_exit(EXIT_FAILURE);
 			}
 		}
-		// fprintf(stderr,"DEBERIA REDIR ERR %d\n",stderr);
-
-		// printf("SALIÓ TODO BIEN CON LOS ARCHIVOS Y VOY A EJECUTAR: \n");
 		simple_exec(r);
 		break;
 	}
@@ -292,13 +274,12 @@ exec_cmd(struct cmd *cmd)
 	case PIPE: {
 		// pipes two commands
 		//
-		divide_pipe((struct pipecmd *) cmd);
-		// printf("Despues del divide pipe\n");
+		int ret = divide_pipe((struct pipecmd *) cmd);
 
 		// free the memory allocated
 		// for the pipe tree structure
 		free_command(parsed_pipe);
-		_exit(-1);
+		_exit(ret);
 		break;
 	}
 	}
