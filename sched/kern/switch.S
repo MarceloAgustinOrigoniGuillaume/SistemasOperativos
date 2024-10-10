@@ -17,17 +17,14 @@
 
 .globl context_switch;
 context_switch:
-
-    pop eax      // Popeamos el puntero del trapframe en eax
+        pop %eax      // Popeamos el puntero del trapframe en eax
 	//mov ebx, rsp // backupeamos el stackpointer
-	mov rsp, eax // sobreescribimos el stack pointer con el trapframe
+	mov %esp, %eax // sobreescribimos el stack pointer con el trapframe
 	//push ebx     // pusheamos el stackpointer original al stack
-	popal        // restauramos los registros
+	popal         // restauramos los registros
 	//pop rsp      // restauramos el stack pointer
 
-	add rsp, 16 // Desplazamos el stack pointer al inicio de tf_eip
-
-
+	add %esp, 16 // Desplazamos el stack pointer al inicio de tf_eip
 
 	iret
 
