@@ -516,7 +516,6 @@ env_run(struct Env *e)
 	if (prevenv != NULL && prevenv->env_status == ENV_RUNNING) {
 		prevenv->env_status = ENV_RUNNABLE;
 	}
-	
 	curenv = e;
 	
 	e->env_status = ENV_RUNNING;

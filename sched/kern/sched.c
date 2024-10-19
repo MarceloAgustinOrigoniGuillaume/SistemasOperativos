@@ -28,6 +28,35 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// Your code here - Round robin
+	int currind = curenv == NULL ?  -1 : ENVX(curenv->env_id);
+	int ind = currind+1;
+	while(ind < NENV && envs[ind].env_status != ENV_RUNNABLE){ // iteramos el arreglo hasta el final.
+                ind++;
+        }
+         
+        if(ind < NENV ){ // Se encontro
+            //cprintf("----- Found process ind: %d!\n",ind);
+            env_run(&envs[ind]);
+        }
+         
+        ind = 0;
+	while(ind < currind && envs[ind].env_status != ENV_RUNNABLE){ // iteramos el arreglo circularmente.
+	    ind++;
+        }
+         
+         
+        if (ind < currind){
+            //cprintf("----- Found process ind: %d!\n",ind);
+            env_run(&envs[ind]);
+        }        
+        // Found nothing , if not runnning then reset to null
+        if(curenv && envs[ind].env_status != ENV_RUNNING){
+            //cprintf("----- Not found process y no estaba running para continuar!\n");
+            curenv = NULL;
+        //} else{
+        //     cprintf("----- Not found process keep curr %d!\n",curenv);
+        }
+        
 #endif
 
 #ifdef SCHED_PRIORITIES
