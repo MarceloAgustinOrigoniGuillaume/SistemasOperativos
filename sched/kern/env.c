@@ -522,19 +522,16 @@ env_run(struct Env *e)
 	e->env_status = ENV_RUNNING;
 	e->env_runs += 1;
 	
-	if(prevenv != e){	
-	      env_load_pgdir(e);
+        env_load_pgdir(e);
 
-	      // Needed if we run with multiple procesors
-	      // Record the CPU we are running on for user-space debugging
-	      unlock_kernel();
-	      curenv->env_cpunum = cpunum();
+        // Needed if we run with multiple procesors
+        // Record the CPU we are running on for user-space debugging
+        unlock_kernel();
+        curenv->env_cpunum = cpunum();
 
-	      // Step 2: Use context_switch() to restore the environment's
-	      //	   registers and drop into user mode in the
-	      //	   environment.
-	      context_switch(&e->env_tf);
-	}
-	
+        // Step 2: Use context_switch() to restore the environment's
+        //	   registers and drop into user mode in the
+        //	   environment.
+        context_switch(&e->env_tf);	
 	panic("env_run not yet implemented"); /* mostly to placate the compiler */
     }

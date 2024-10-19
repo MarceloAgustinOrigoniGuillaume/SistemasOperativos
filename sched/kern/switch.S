@@ -15,16 +15,22 @@
 	mov rdx, [rax] //memoria a registro
 */
 
+/*
+        |    ...    |  mas cosas de antes.
+        |  env_tf*  |   
+        |  ret addr |   <- esp 
+*/
 .globl context_switch;
 context_switch:
-        pop %eax      // Popeamos el puntero del trapframe en eax
-	//mov ebx, rsp // backupeamos el stackpointer
-	mov %esp, %eax // sobreescribimos el stack pointer con el trapframe
-	//push ebx     // pusheamos el stackpointer original al stack
+        
+	add $0x4, %esp // ignoramos el ret addr
+        pop %esp // el stack apuntaria a envtf*, pone el valor , el puntero como esp.
+        
 	popal         // restauramos los registros
-	//pop rsp      // restauramos el stack pointer
-
-	add %esp, 16 // Desplazamos el stack pointer al inicio de tf_eip
+	
+	pop %es         // restauramos es
+	pop %ds         // restauramos ds
+	add $0x8, %esp // Desplazamos el stack pointer al inicio de tf_eip
 
 	iret
 
