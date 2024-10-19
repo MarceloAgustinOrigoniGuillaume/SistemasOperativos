@@ -78,8 +78,8 @@ TRAPHANDLER_NOEC(trap48, T_SYSCALL)
  * Your code here for _alltraps
  */
 _alltraps:
-     push %ds
-     push %es
-     pushal
-     push %esp
-     call trap
+     push %ds // Ya esta armado anteriores cosas, solo pusheamos el ds
+     push %es // el es
+     pushal   // y los regs
+     push %esp // Agregamos el puntero al trapfame ya armado
+     call trap // Handlea la excepcion.
