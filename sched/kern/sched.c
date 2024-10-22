@@ -69,6 +69,62 @@ sched_yield(void)
 	// environment is selected and run every time.
 
 	// Your code here - Priorities
+
+	int minId = -1;
+	int minPriority = 21;
+
+	int currind = curenv == NULL ?  -1 : ENVX(curenv->env_id);
+	int ind = currind;
+
+	for (ind; ind < NENV; ind++) {
+		if (envs[ind].env_status == ENV_RUNNABLE && envs[ind].env_priority < minPriority) {
+			// cprintf("----- Found new min priority process ind: %d!\n",ind);
+			minPriority = envs[ind].env_priority;
+			minId = ind;
+		}
+	}
+
+	for (ind = 0; ind < currind; ind++) {
+		if (envs[ind].env_status == ENV_RUNNABLE && envs[ind].env_priority < minPriority) {
+			// cprintf("----- Found new min priority process ind: %d!\n",ind);
+			minPriority = envs[ind].env_priority;
+			minId = ind;
+		}
+	}
+	
+	if (minId != -1) {
+		// Runs the process with the best priority
+		env_run(&envs[minId]);
+	}
+
+	// while(ind < NENV && envs[ind].env_status != ENV_RUNNABLE){ // iteramos el arreglo hasta el final.
+    //             ind++;
+    //     }
+         
+    //     if(ind < NENV ){ // Se encontro
+    //         //cprintf("----- Found process ind: %d!\n",ind);
+    //         env_run(&envs[ind]);
+    //     }
+         
+    //     ind = 0;
+	// while(ind < currind && envs[ind].env_status != ENV_RUNNABLE){ // iteramos el arreglo circularmente.
+	//     ind++;
+    //     }
+         
+         
+    //     if (ind < currind){
+    //         //cprintf("----- Found process ind: %d!\n",ind);
+    //         env_run(&envs[ind]);
+    //     }        
+    //     // Found nothing , if not runnning then reset to null
+    //     if(curenv && envs[ind].env_status != ENV_RUNNING){
+    //         //cprintf("----- Not found process y no estaba running para continuar!\n");
+    //         curenv = NULL;
+    //     //} else{
+    //     //     cprintf("----- Not found process keep curr %d!\n",curenv);
+    //     }
+
+
 #endif
 
 	// Without scheduler, keep runing the last environment while it exists
@@ -87,7 +143,8 @@ void
 sched_halt(void)
 {
 	int i;
-
+	cprintf("Fell on sched_halt\n");
+	// cprintf("In theory, this should show only at the end when theres no more env to run\n");
 	// For debugging and testing purposes, if there are no runnable
 	// environments in the system, then drop into the kernel monitor.
 	for (i = 0; i < NENV; i++) {

@@ -12,6 +12,9 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 
+#define MAX_PRIORITY 1
+#define MIN_PRIORITY 20
+
 
 static int
 check_perm(int perm, pte_t *pte)
@@ -151,6 +154,9 @@ sys_exofork(void)
 	newenv->env_status = ENV_NOT_RUNNABLE;
 	newenv->env_tf = curenv->env_tf;
 	newenv->env_tf.tf_regs.reg_eax = 0;
+
+	// Create a new event with the same priority as the current one
+	newenv->env_priority = curenv->env_priority;
 
 	return newenv->env_id;
 	// panic("sys_exofork not implemented");
@@ -429,6 +435,58 @@ sys_ipc_recv(void *dstva)
 	return 0;
 }
 
+// static int
+// sys_env_set_status(envid_t envid, int status)
+// {
+// 	// Hint: Use the 'envid2env' function from kern/env.c to translate an
+// 	// envid to a struct Env.
+// 	// You should set envid2env's third argument to 1, which will
+// 	// check whether the current environment has permission to set
+// 	// envid's status.
+
+// 	if ((status != ENV_RUNNABLE) && (status != ENV_NOT_RUNNABLE))
+// 		return -E_INVAL;
+
+// 	struct Env *env;
+// 	int r;
+// 	if ((r = envid2env(envid, &env, 1)))
+// 		return r;
+
+// 	env->env_status = status;
+// 	return 0;
+// 	// panic("sys_env_set_status not implemented");
+// }
+
+static int
+sys_get_priority(envid_t envid) {
+
+	struct Env *env;
+	int r;
+	if ((r = envid2env(envid, &env, 1)))
+		return r;
+	return env->env_priority;
+
+}
+
+static int
+sys_lower_priority(envid_t envid, int priority) {
+
+	if (priority <= 0 || priority > MIN_PRIORITY) {
+		return -E_INVAL;
+	}
+	struct Env *env;
+	int r;
+	if ((r = envid2env(envid, &env, 1)))
+		return r;
+
+	if (env->env_priority < priority) {
+		return -E_INVAL;
+	}
+
+	env->env_priority = priority;
+	return 0;
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -462,6 +520,10 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_ipc_try_send(a1, a2, (void *) a3, a4);
 	case SYS_env_set_pgfault_upcall:
 		return sys_env_set_pgfault_upcall(a1, (void *) a2);
+	case SYS_get_priority:
+		return sys_get_priority(a1);
+	case SYS_lower_priority:
+		return sys_lower_priority(a1, a2);
 	case SYS_yield:
 		sys_yield();  // No return
 	default:
