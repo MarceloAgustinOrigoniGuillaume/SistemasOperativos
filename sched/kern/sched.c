@@ -94,6 +94,10 @@ sched_yield(void)
 	
 	if (minId != -1) {
 		// Runs the process with the best priority
+		if (envs[minId].env_priority >= 20 && envs[minId].env_runs % 3 == 0) {
+			envs[minId].env_priority = 1;
+		}
+		envs[minId].env_priority += 1;
 		env_run(&envs[minId]);
 	}
 
@@ -143,7 +147,7 @@ void
 sched_halt(void)
 {
 	int i;
-	cprintf("Fell on sched_halt\n");
+	// cprintf("Fell on sched_halt\n");
 	// cprintf("In theory, this should show only at the end when theres no more env to run\n");
 	// For debugging and testing purposes, if there are no runnable
 	// environments in the system, then drop into the kernel monitor.
