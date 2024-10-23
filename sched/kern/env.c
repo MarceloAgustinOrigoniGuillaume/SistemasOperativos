@@ -15,6 +15,12 @@
 #include <kern/cpu.h>
 #include <kern/spinlock.h>
 
+int count_sched_yields = 0;
+unsigned int total_envs_finished = 0;
+unsigned int total_turnaround = 0;
+unsigned int total_response_time = 0;
+//struct EnvFinished * finished_envs = NULL;
+
 struct Env *envs = NULL;           // All environments
 static struct Env *env_free_list;  // Free environment list
                                    // (linked by Env->env_link)
@@ -399,6 +405,8 @@ env_create(uint8_t *binary, enum EnvType type)
 	load_icode(env, binary);
 	env->env_type = type;
 	env->env_priority = 1;
+	env->start =count_sched_yields;
+	
 }
 
 //
@@ -451,6 +459,13 @@ env_free(struct Env *e)
 	e->env_status = ENV_FREE;
 	e->env_link = env_free_list;
 	env_free_list = e;
+	e->start = count_sched_yields- e->start;
+	total_envs_finished++;
+	total_turnaround+= e->start;
+	//struct EnvFinished * curr_finished = malloc(sizeof(struct EnvFinished));
+	
+	//finished_envs = 
+	
 }
 
 //
@@ -520,7 +535,12 @@ env_run(struct Env *e)
 	curenv = e;
 	
 	e->env_status = ENV_RUNNING;
+	
+	if(e->env_runs == 0){
+	    total_response_time+= count_sched_yields- e->start;
+	}
 	e->env_runs += 1;
+        count_sched_yields++;
 	
         env_load_pgdir(e);
 

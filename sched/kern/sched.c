@@ -2,8 +2,13 @@
 #include <inc/x86.h>
 #include <kern/spinlock.h>
 #include <kern/env.h>
+//#include <kern/sched.h>
 #include <kern/pmap.h>
 #include <kern/monitor.h>
+
+
+
+static unsigned int count_sched_idle = 0;
 
 void sched_halt(void);
 
@@ -133,6 +138,7 @@ sched_halt(void)
 {
 	int i;
 	cprintf("Fell on sched_halt\n");
+        count_sched_idle++;
 	// cprintf("In theory, this should show only at the end when theres no more env to run\n");
 	// For debugging and testing purposes, if there are no runnable
 	// environments in the system, then drop into the kernel monitor.
@@ -144,6 +150,27 @@ sched_halt(void)
 	}
 	if (i == NENV) {
 		cprintf("No runnable environments in the system!\n");
+		cprintf("========== ALGUNA ESTADISTICA\n");
+		cprintf("========== cantidad de llamados al sched %d\n", count_sched_yields);
+		cprintf("========== cantidad timeslices idle %d\n", count_sched_idle);
+		cprintf("========== cantidad procesos terminados %d\n", total_envs_finished);
+		if(total_envs_finished > 0){
+		      cprintf("========== cantidad turnaround promedio %d\n", total_turnaround/total_envs_finished);
+		      cprintf("========== cantidad promedio en empezar un env %d\n", total_response_time/total_envs_finished);
+		}
+		
+	        int ind =0;
+	        for (ind; ind < NENV; ind++) {
+	                if(envs[ind].env_runs == 0){
+	                    continue;
+	                }
+	                
+	                cprintf("========== turnaround: %d id: %d runs:%d\n",envs[ind].start, 
+	                                                             envs[ind].env_id, envs[ind].env_runs); 
+	        }
+
+		
+		
 		while (1)
 			monitor(NULL);
 	}

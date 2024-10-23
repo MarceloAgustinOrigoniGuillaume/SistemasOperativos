@@ -6,6 +6,14 @@
 #include <inc/env.h>
 #include <kern/cpu.h>
 
+
+extern int count_sched_yields;
+extern unsigned int total_envs_finished;
+extern unsigned int total_turnaround;
+extern unsigned int total_response_time;
+//extern struct EnvFinished * finished_envs;           // All environments
+
+
 extern struct Env *envs;           // All environments
 #define curenv (thiscpu->cpu_env)  // Current environment
 extern struct Segdesc gdt[];
