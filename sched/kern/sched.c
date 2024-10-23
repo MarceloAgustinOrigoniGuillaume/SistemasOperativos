@@ -111,6 +111,9 @@ sched_yield(void)
 		env_run(&envs[minId]);
 	}
 
+        if(curenv && envs[ind].env_status != ENV_RUNNING){
+            curenv = NULL;
+        }
 #endif
 
 	// Without scheduler, keep runing the last environment while it exists
