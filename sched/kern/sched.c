@@ -71,63 +71,45 @@ sched_yield(void)
 	// Your code here - Priorities
 
 	int minId = -1;
-	int minPriority = 21;
+	int minPriority = 20;
+
+	// cprintf("Calling again the sched with minId: %d and minPriority: %d\n",minId,minPriority);
 
 	int currind = curenv == NULL ?  -1 : ENVX(curenv->env_id);
+	// cprintf("---- The current proc id is: %d\n",currind);
 	int ind = currind;
 
+	// cprintf("Going through the first loop\n");
 	for (ind; ind < NENV; ind++) {
-		if (envs[ind].env_status == ENV_RUNNABLE && envs[ind].env_priority < minPriority) {
-			// cprintf("----- Found new min priority process ind: %d!\n",ind);
+		// cprintf("Process ind: %d status: %d priority: %d\n",ind,envs[ind].env_status,envs[ind].env_priority);
+		if (envs[ind].env_status == ENV_RUNNABLE && envs[ind].env_priority <= minPriority) {
+			// cprintf("----- Found new min priority process ind: %d and priority: %d\n",ind,envs[ind].env_priority);
 			minPriority = envs[ind].env_priority;
 			minId = ind;
 		}
 	}
 
+	// cprintf("On to the second loop\n");
 	for (ind = 0; ind < currind; ind++) {
-		if (envs[ind].env_status == ENV_RUNNABLE && envs[ind].env_priority < minPriority) {
-			// cprintf("----- Found new min priority process ind: %d!\n",ind);
+		// cprintf("Process ind: %d status: %d priority: %d\n",ind,envs[ind].env_status,envs[ind].env_priority);
+		if (envs[ind].env_status == ENV_RUNNABLE && envs[ind].env_priority <= minPriority) {
+			// cprintf("----- Found new min priority process ind: %d and priority: %d\n",ind,envs[ind].env_priority);
 			minPriority = envs[ind].env_priority;
 			minId = ind;
 		}
 	}
 	
 	if (minId != -1) {
+		// cprintf("##########Now im running the process with ind: %d and priority: %d#########\n", minId, envs[minId].env_priority);
 		// Runs the process with the best priority
 		if (envs[minId].env_priority >= 20 && envs[minId].env_runs % 3 == 0) {
+			// cprintf("BOOSTING\n");
 			envs[minId].env_priority = 1;
+		} else if (envs[minId].env_priority < 20) {
+			envs[minId].env_priority += 1;
 		}
-		envs[minId].env_priority += 1;
 		env_run(&envs[minId]);
 	}
-
-	// while(ind < NENV && envs[ind].env_status != ENV_RUNNABLE){ // iteramos el arreglo hasta el final.
-    //             ind++;
-    //     }
-         
-    //     if(ind < NENV ){ // Se encontro
-    //         //cprintf("----- Found process ind: %d!\n",ind);
-    //         env_run(&envs[ind]);
-    //     }
-         
-    //     ind = 0;
-	// while(ind < currind && envs[ind].env_status != ENV_RUNNABLE){ // iteramos el arreglo circularmente.
-	//     ind++;
-    //     }
-         
-         
-    //     if (ind < currind){
-    //         //cprintf("----- Found process ind: %d!\n",ind);
-    //         env_run(&envs[ind]);
-    //     }        
-    //     // Found nothing , if not runnning then reset to null
-    //     if(curenv && envs[ind].env_status != ENV_RUNNING){
-    //         //cprintf("----- Not found process y no estaba running para continuar!\n");
-    //         curenv = NULL;
-    //     //} else{
-    //     //     cprintf("----- Not found process keep curr %d!\n",curenv);
-    //     }
-
 
 #endif
 
@@ -147,7 +129,7 @@ void
 sched_halt(void)
 {
 	int i;
-	// cprintf("Fell on sched_halt\n");
+	cprintf("Fell on sched_halt\n");
 	// cprintf("In theory, this should show only at the end when theres no more env to run\n");
 	// For debugging and testing purposes, if there are no runnable
 	// environments in the system, then drop into the kernel monitor.

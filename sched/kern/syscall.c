@@ -458,14 +458,15 @@ sys_ipc_recv(void *dstva)
 // }
 
 static int
-sys_get_priority(envid_t envid) {
+sys_get_priority(envid_t envid, void *va) {
 
 	struct Env *env;
 	int r;
 	if ((r = envid2env(envid, &env, 1)))
 		return r;
-	return env->env_priority;
 
+	*(int *) va = env->env_priority;
+	return 0;
 }
 
 static int
@@ -521,7 +522,7 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	case SYS_env_set_pgfault_upcall:
 		return sys_env_set_pgfault_upcall(a1, (void *) a2);
 	case SYS_get_priority:
-		return sys_get_priority(a1);
+		return sys_get_priority(a1, (void *) a2);
 	case SYS_lower_priority:
 		return sys_lower_priority(a1, a2);
 	case SYS_yield:
