@@ -35,7 +35,9 @@ sched_yield(void)
 	// Your code here - Round robin
 	int currind = curenv == NULL ? -1 : ENVX(curenv->env_id);
 	int ind = currind + 1;
-	while (ind < NENV && envs[ind].env_status != ENV_RUNNABLE) {  // iteramos el arreglo hasta el final.
+	while (ind < NENV &&
+	       envs[ind].env_status !=
+	               ENV_RUNNABLE) {  // iteramos el arreglo hasta el final.
 		ind++;
 	}
 
@@ -44,13 +46,15 @@ sched_yield(void)
 	}
 
 	ind = 0;
-	while (ind < currind && envs[ind].env_status !=  ENV_RUNNABLE) {  // iteramos el arreglo circularmente.
+	while (ind < currind &&
+	       envs[ind].env_status !=
+	               ENV_RUNNABLE) {  // iteramos el arreglo circularmente.
 		ind++;
 	}
 
 
 	if (ind < currind) {
-		// Found process 
+		// Found process
 		env_run(&envs[ind]);
 	}
 	// Found nothing , if not runnning then reset to null
@@ -85,7 +89,8 @@ sched_yield(void)
 			prev = curenv;
 		}
 
-		nextPriority = curenv->env_priority + 1;  // Proba si no hay next.. la siguiente.
+		nextPriority = curenv->env_priority +
+		               1;  // Proba si no hay next.. la siguiente.
 		while (next == NULL && nextPriority < MIN_PRIORITY) {
 			next = search_runnable_on_p(nextPriority, &prev);
 			nextPriority++;

@@ -779,7 +779,6 @@ env_free(struct Env *e)
 	total_turnaround += e->start;
 
 	// struct EnvFinished * curr_finished = malloc(sizeof(struct EnvFinished));
-
 }
 
 //
