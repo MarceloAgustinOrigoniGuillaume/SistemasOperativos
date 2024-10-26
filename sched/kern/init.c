@@ -87,6 +87,7 @@ i386_init(void)
 	//ENV_CREATE(user_primes, ENV_TYPE_USER);
 	//ENV_CREATE(user_pingpong, ENV_TYPE_USER);
 	ENV_CREATE(user_forktree, ENV_TYPE_USER);
+	ENV_CREATE(user_lowerpriority, ENV_TYPE_USER);
 	ENV_CREATE(user_forktree, ENV_TYPE_USER);
 	//ENV_CREATE(user_hello, ENV_TYPE_USER);
 	//ENV_CREATE(user_hello, ENV_TYPE_USER);
