@@ -124,8 +124,6 @@ sched_yield(void)
 	if (curenv) {
 		env_run(curenv);
 	}
-        count_sched_idle++;
-
 	// sched_halt never returns
 	sched_halt();
 }
@@ -145,6 +143,7 @@ sched_halt(void)
 		if ((envs[i].env_status == ENV_RUNNABLE ||
 		     envs[i].env_status == ENV_RUNNING ||
 		     envs[i].env_status == ENV_DYING)){
+	                count_sched_idle++;
 	                //cprintf("Fell on sched_halt %08x  %d\n", envs[i].env_id, envs[i].env_status == ENV_RUNNABLE?1:0);
 			break;
 		     }
