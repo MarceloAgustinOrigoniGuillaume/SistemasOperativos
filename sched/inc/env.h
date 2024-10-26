@@ -60,7 +60,11 @@ struct Env {
 	uint32_t env_ipc_value;  // Data value sent to us
 	envid_t env_ipc_from;    // envid of the sender
 	int env_ipc_perm;        // Perm of page mapping received
+	
 	int env_priority;		// Priority of the environment
+	#ifdef SCHED_PRIORITIES
+	struct Env * priority_next; // Next on priority
+	#endif
 };
 
 #endif  // !JOS_INC_ENV_H

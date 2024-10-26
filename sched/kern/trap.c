@@ -227,6 +227,19 @@ trap_dispatch(struct Trapframe *tf)
 	switch (tf->tf_trapno - IRQ_OFFSET) {
 	case IRQ_TIMER:
 		lapic_eoi();
+		#ifdef SCHED_PRIORITIES
+		if(curenv != NULL && curenv->env_status == ENV_RUNNING){
+		     if(tot_slice_switches == 1){
+		          cprintf("EL CURENV SE CORRIO UNICAMENTE? %d\n", tot_slice_switches);
+		          
+		          lock_kernel();
+		          lower_priority_env(curenv, search_prev_for_p(curenv));
+		          unlock_kernel();
+		     }
+		}
+		tot_slice_switches=0; 
+		#endif
+		
 		sched_yield();
 		return;
 	}

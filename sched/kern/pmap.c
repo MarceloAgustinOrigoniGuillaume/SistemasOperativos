@@ -163,6 +163,12 @@ mem_init(void)
 	uint32_t envs_size = NENV * sizeof(struct Env);
 	envs = (struct Env *) boot_alloc(envs_size);
 	memset(envs, 0, envs_size);
+	
+	#ifdef SCHED_PRIORITIES
+	uint32_t priorities_size = MIN_PRIORITY * sizeof(struct PriorityInfo);
+	priorities = (struct PriorityInfo*) boot_alloc(priorities_size);
+	memset(priorities, 0, priorities_size);
+	#endif
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set

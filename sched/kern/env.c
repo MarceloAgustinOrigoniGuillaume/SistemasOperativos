@@ -21,9 +21,148 @@ unsigned int total_turnaround = 0;
 unsigned int total_response_time = 0;
 //struct EnvFinished * finished_envs = NULL;
 
+int tot_slice_switches = 0;
+
 struct Env *envs = NULL;           // All environments
 static struct Env *env_free_list;  // Free environment list
                                    // (linked by Env->env_link)
+
+
+#ifdef SCHED_PRIORITIES
+struct PriorityInfo* priorities = NULL; // All priorities
+
+
+// Busca en la lista de la prioridad.
+// Y guarda en prev el valor anterior.
+struct Env* search_runnable_on_p(int ind, struct Env** prev){
+     struct Env* curr = priorities[ind].first;
+     
+     // Setea a null por las dudas
+     *prev = NULL;
+     
+     //Casos borde.
+     if(curr == NULL){
+         return NULL;
+     }
+     struct Env* next = curr->priority_next;          
+     // Se guardo el next.
+     if(curr->env_status == ENV_RUNNABLE){
+          return curr;
+     }
+     
+     if(next == NULL){ // Only element in list.
+         return NULL;
+     }
+     
+     //Curr no era runnable. Entonces es prev.
+     *prev = curr;
+     
+     // Anda a next.
+     curr = next;
+     // Next es el next del curr.
+     next = curr->priority_next;
+     
+     while(curr->env_status != ENV_RUNNABLE && next != NULL){
+          // No era runnable. Otra vez.. curr va a prev.
+          *prev = curr;
+          // Next a curr
+          curr = next;          
+          // Y update del next.. sabiendo que next fue != null
+          next = curr->priority_next;
+     } 
+     return curr->env_status == ENV_RUNNABLE? curr : NULL;
+}
+
+// Similar a lo de antes.. pero busca uno en especifico.
+// Para el pop basicamente.
+struct Env* search_prev_on_p(struct Env* curr, struct Env* target){
+     struct Env* prev = NULL;          
+     struct Env* next = curr->priority_next;          
+     // Se guardo el next.
+     if(curr == target){
+          return prev;
+     }
+     
+     if(next == NULL){ // Only element in list.
+         return NULL;
+     }
+     
+     //Curr no era runnable. Entonces es prev.
+     prev = curr;
+     // Anda a next.
+     curr = next;
+     // Next es el next del curr.
+     next = curr->priority_next;
+     
+     while(curr != target && next != NULL){
+          // No era runnable. Otra vez.. curr va a prev.
+          prev = curr;
+          // Next a curr
+          curr = next;          
+          // Y update del next.. sabiendo que next fue != null
+          next = curr->priority_next;
+     } 
+     return curr == target? prev : NULL;
+}
+
+struct Env* search_prev_for_p(struct Env* target){
+       return search_prev_on_p(priorities[target->env_priority-1].first ,target); 
+}
+
+void add_to_priority(struct Env *env, int ind){
+	env->env_priority = ind;
+	ind--;
+	if(priorities[ind].first == NULL){
+	     // Was empty.
+	     priorities[ind].first = env;
+	     priorities[ind].last = env;
+	     env->priority_next = NULL;
+	     
+	     return;
+	}
+	priorities[ind].last->priority_next = env;
+	priorities[ind].last = env;
+}
+
+// Asume el prev es el dado. Y prev == null significa es el primero. Y viceversa.
+void remove_from_priority(struct Env *env, struct Env *prev){
+     if(env == priorities[env->env_priority].first){ // Era el primero!
+          if(priorities[env->env_priority].last == env){ // Era el unico.
+              priorities[env->env_priority].first = NULL;
+              priorities[env->env_priority].last = NULL;
+          } else{
+              priorities[env->env_priority].first = priorities[env->env_priority].last;
+          }
+          return;
+     }
+     
+     // prev != null ya que no fue el primero.
+     prev->priority_next = env->priority_next; // Esto hizo el remove.
+      
+     if(env == priorities[env->env_priority].last){ // Mantene actualizado.
+          priorities[env->env_priority].last = prev;
+     }
+}
+
+void lower_priority_env(struct Env *env, struct Env *prev){
+	// Boosting y lowering ..
+	
+	int new_priority = 1;
+	if (env->env_priority < MIN_PRIORITY) {
+	      new_priority = env->env_priority + 1;
+	} else if (env->env_runs % 3 != 0) { // Es min priority
+	      // Since on sched yield llama lower si runs % 2 == 0 , y aca es % 3==0.. es igual a %6 ==0
+	      // Para el boost.
+	      return;
+	}
+	
+	remove_from_priority(env,prev);
+        add_to_priority(env, new_priority);	
+}
+
+
+#endif
+
 
 #define ENVGENSHIFT 12  // >= LOGNENV
 
@@ -403,10 +542,16 @@ env_create(uint8_t *binary, enum EnvType type)
 		panic("env_create: %e\n", err);
 
 	load_icode(env, binary);
-	env->env_type = type;
-	env->env_priority = 1;
+	env->env_type = type;	
 	env->start =count_sched_yields;
 	
+	#ifdef SCHED_PRIORITIES
+	add_to_priority(env, 1);
+	#endif
+	
+	#ifdef SCHED_ROUND_ROBIN
+	env->env_priority = 1;	
+	#endif
 }
 
 //
@@ -427,6 +572,15 @@ env_free(struct Env *e)
 
 	// Note the environment's demise.
 	cprintf("[%08x] free env %08x\n", curenv ? curenv->env_id : 0, e->env_id);
+	
+	
+	#ifdef SCHED_PRIORITIES
+	//Primero saquesmolo de la lista/queue de prioridad.
+	remove_from_priority(e, search_prev_for_p(e));
+	// Seguro no hace falta..
+	e->priority_next = NULL;
+	e->env_priority = 1; 
+	#endif
 
 	// Flush all mapped pages in the user portion of the address space
 	static_assert(UTOP % PTSIZE == 0);
@@ -449,6 +603,8 @@ env_free(struct Env *e)
 		e->env_pgdir[pdeno] = 0;
 		page_decref(pa2page(pa));
 	}
+	
+
 
 	// free the page directory
 	pa = PADDR(e->env_pgdir);
@@ -462,6 +618,7 @@ env_free(struct Env *e)
 	e->start = count_sched_yields- e->start;
 	total_envs_finished++;
 	total_turnaround+= e->start;
+	
 	//struct EnvFinished * curr_finished = malloc(sizeof(struct EnvFinished));
 	
 	//finished_envs = 
@@ -531,7 +688,12 @@ env_run(struct Env *e)
 
 	if (prevenv != NULL && prevenv->env_status == ENV_RUNNING) {
 		prevenv->env_status = ENV_RUNNABLE;
-	}
+		#ifdef SCHED_PRIORITIES
+		if(prevenv != e){
+		     tot_slice_switches+=1; 
+		}
+		#endif
+	}	
 	curenv = e;
 	
 	e->env_status = ENV_RUNNING;
@@ -540,8 +702,8 @@ env_run(struct Env *e)
 	    total_response_time+= count_sched_yields- e->start;
 	}
 	e->env_runs += 1;
-        count_sched_yields++;
 	
+        count_sched_yields++;
         env_load_pgdir(e);
 
         // Needed if we run with multiple procesors

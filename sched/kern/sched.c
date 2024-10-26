@@ -74,49 +74,36 @@ sched_yield(void)
 	// environment is selected and run every time.
 
 	// Your code here - Priorities
-
-	int minId = -1;
-	int minPriority = 20;
-
-	// cprintf("Calling again the sched with minId: %d and minPriority: %d\n",minId,minPriority);
-
-	int currind = curenv == NULL ?  -1 : ENVX(curenv->env_id);
-	// cprintf("---- The current proc id is: %d\n",currind);
-	int ind = currind;
-
-	// cprintf("Going through the first loop\n");
-	for (ind; ind < NENV; ind++) {
-		// cprintf("Process ind: %d status: %d priority: %d\n",ind,envs[ind].env_status,envs[ind].env_priority);
-		if (envs[ind].env_status == ENV_RUNNABLE && envs[ind].env_priority <= minPriority) {
-			// cprintf("----- Found new min priority process ind: %d and priority: %d\n",ind,envs[ind].env_priority);
-			minPriority = envs[ind].env_priority;
-			minId = ind;
-		}
+	
+	// Search_runnable y
+	// Lower priority estan en env.c !
+	
+	struct Env* prev;
+	
+	lock_kernel(); // Nadie querria cambien las prioridades en el medio.
+	// O que varios procesadores eligan el mismo.
+	
+	struct Env* next= search_runnable_on_p(0, &prev);
+	unlock_kernel();
+	
+	int nextPriority= 1;
+	while(next == NULL && nextPriority < MIN_PRIORITY){
+	     next= search_runnable_on_p(nextPriority, &prev);
+	     nextPriority++;
 	}
-
-	// cprintf("On to the second loop\n");
-	for (ind = 0; ind < currind; ind++) {
-		// cprintf("Process ind: %d status: %d priority: %d\n",ind,envs[ind].env_status,envs[ind].env_priority);
-		if (envs[ind].env_status == ENV_RUNNABLE && envs[ind].env_priority <= minPriority) {
-			// cprintf("----- Found new min priority process ind: %d and priority: %d\n",ind,envs[ind].env_priority);
-			minPriority = envs[ind].env_priority;
-			minId = ind;
-		}
+		
+	if (next != NULL) {
+	        if(next->env_runs % 2 == 0){ // Cada 2 env runs..
+	             lower_priority_env(next, prev);
+	        }
+	        unlock_kernel();
+		env_run(next);
 	}
 	
-	if (minId != -1) {
-		// cprintf("##########Now im running the process with ind: %d and priority: %d#########\n", minId, envs[minId].env_priority);
-		// Runs the process with the best priority
-		if (envs[minId].env_priority >= 20 && envs[minId].env_runs % 3 == 0) {
-			// cprintf("BOOSTING\n");
-			envs[minId].env_priority = 1;
-		} else if (envs[minId].env_priority < 20) {
-			envs[minId].env_priority += 1;
-		}
-		env_run(&envs[minId]);
-	}
-
-        if(curenv && envs[ind].env_status != ENV_RUNNING){
+	unlock_kernel();
+	
+	// No se encontro un next. Fijate si podes seguir con este.. sino reset..
+        if(curenv && curenv->env_status != ENV_RUNNING){
             curenv = NULL;
         }
 #endif

@@ -11,6 +11,7 @@
 #include <kern/syscall.h>
 #include <kern/console.h>
 #include <kern/sched.h>
+#include <kern/spinlock.h>
 
 #define MAX_PRIORITY 1
 #define MIN_PRIORITY 20
@@ -469,6 +470,9 @@ sys_get_priority(envid_t envid, void *va) {
 	return 0;
 }
 
+
+
+
 static int
 sys_lower_priority(envid_t envid, int priority) {
 
@@ -483,8 +487,17 @@ sys_lower_priority(envid_t envid, int priority) {
 	if (env->env_priority < priority) {
 		return -E_INVAL;
 	}
-
-	env->env_priority = priority;
+	#ifdef SCHED_PRIORITIES
+	lock_kernel();
+	remove_from_priority(curenv,search_prev_for_p(curenv));
+        add_to_priority(curenv,  priority);	
+	unlock_kernel();
+	#endif
+	
+	#ifdef SCHED_ROUND_ROBIN
+	     env->env_priority = priority;
+	#endif
+	
 	return 0;
 }
 
