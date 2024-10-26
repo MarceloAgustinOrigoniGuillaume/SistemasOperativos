@@ -168,25 +168,16 @@ sched_halt(void)
 		cprintf("========== cantidad procesos terminados %d\n",
 		        total_envs_finished);
 		if (total_envs_finished > 0) {
-			cprintf("========== cantidad turnaround promedio %d\n",
+			cprintf("========== turnaround promedio %d\n",
 			        total_turnaround / total_envs_finished);
-			cprintf("========== cantidad promedio en empezar un "
-			        "env %d\n",
+			cprintf("========== turnaround maximo  %d\n",
+			        max_turnaround);
+
+			cprintf("========== response time promedio %d\n",
 			        total_response_time / total_envs_finished);
+			cprintf("========== response_time maximo %d\n",
+			        max_response_time);
 		}
-
-		/*
-		int ind =0;
-		for (ind; ind < NENV; ind++) {
-		        if(envs[ind].env_runs == 0){
-		            continue;
-		        }
-
-		        cprintf("========== turnaround: %d id: %d
-		runs:%d\n",envs[ind].start, envs[ind].env_id,
-		envs[ind].env_runs);
-		}
-		*/
 
 
 		while (1)

@@ -20,7 +20,10 @@ unsigned int count_sched_yields = 0;
 unsigned int count_total_runs = 0;
 unsigned int total_envs_finished = 0;
 unsigned int total_turnaround = 0;
+unsigned int max_turnaround = 0;
+
 unsigned int total_response_time = 0;
+unsigned int max_response_time = 0;
 // struct EnvFinished * finished_envs = NULL;
 
 int tot_slice_switches = 0;
@@ -778,6 +781,9 @@ env_free(struct Env *e)
 	e->start = count_total_runs - e->start;
 	total_envs_finished++;
 	total_turnaround += e->start;
+	if (e->start > max_turnaround) {
+		max_turnaround = e->start;
+	}
 
 	// struct EnvFinished * curr_finished = malloc(sizeof(struct EnvFinished));
 
@@ -872,7 +878,11 @@ env_run(struct Env *e)
 		e->env_status = ENV_RUNNING;
 
 		if (e->env_runs == 0) {
-			total_response_time += count_total_runs - e->start;
+			unsigned int response_time = count_total_runs - e->start;
+			total_response_time += response_time;
+			if (response_time > max_response_time) {
+				max_response_time = response_time;
+			}
 		}
 		e->env_runs += 1;
 		count_total_runs++;

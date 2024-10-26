@@ -102,16 +102,11 @@ CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 &
 
 USE_RR =
 USE_PR =
-USE_SYSC =
 
 ifeq ($(USE_RR), 1)
 CFLAGS += -DSCHED_ROUND_ROBIN
 else ifeq ($(USE_PR), 1)
 CFLAGS += -DSCHED_PRIORITIES
-ifeq ($(USE_SYSC), 1)
-CFLAGS += -DSCHED_SYS_PRIORITIES
-endif
-
 else
 CFLAGS += -DSCHED_ROUND_ROBIN
 endif
@@ -124,6 +119,12 @@ ifeq ($(DBG), 1)
 CFLAGS += -DSCHED_DEBUG -DSCHED_VERB
 else ifeq ($(VERB), 1)
 CFLAGS += -DSCHED_VERB
+endif
+
+USE_SYSC =
+
+ifeq ($(USE_SYSC), 1)
+CFLAGS += -DSCHED_SYS_PRIORITIES
 endif
 
 
