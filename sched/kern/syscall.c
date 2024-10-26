@@ -156,7 +156,7 @@ sys_exofork(void)
 	// Create a new event with the same priority as the current one
 	#ifdef SCHED_PRIORITIES
 	//cprintf("%d---CREATE/FORK ADD OF %08x parent: %08x\n",count_sched_yields, newenv->env_id, curenv->env_id);
-	add_to_priority(newenv, curenv->env_priority);
+	update_priority_fork(newenv, curenv);
 	//snapshot();
 	#endif
 	
@@ -494,10 +494,7 @@ sys_lower_priority(envid_t envid, int priority) {
 		return -E_INVAL;
 	}
 	#ifdef SCHED_PRIORITIES
-	lock_kernel();
-	remove_from_priority(curenv,search_prev_for_p(curenv));
-        add_to_priority(curenv,  priority);	
-	unlock_kernel();
+	     lower_priority_of(curenv,  priority);
 	#endif
 	
 	#ifdef SCHED_ROUND_ROBIN

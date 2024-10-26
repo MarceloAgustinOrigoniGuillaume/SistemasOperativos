@@ -4,8 +4,13 @@
 #define JOS_KERN_ENV_H
 
 #define MAX_PRIORITY 1
-#define MIN_PRIORITY 4
-#define BOOST_TIMESLICE 100
+#define MIN_PRIORITY 10
+#define BOOST_TIMESLICE 150
+
+#define RUNS_UNTIL_LOWER 5
+#define LOWER_ON_INTERRUPT 3
+
+
 #include <inc/env.h>
 #include <kern/cpu.h>
 
@@ -29,10 +34,11 @@ struct PriorityInfo{
 extern struct PriorityInfo priorities[MIN_PRIORITY]; // All priorities
 
 // Funciones para prioridad!!
-//void lower_priority_env(struct Env *env, struct Env *prev);
+void lower_priority_of(struct Env *env, int priority);
+void update_priority_fork(struct Env *forked, struct Env *original);
 
-void remove_from_priority(struct Env *env, struct Env *prev);
-void add_to_priority(struct Env *env, int ind);
+//void remove_from_priority(struct Env *env, struct Env *prev);
+//void add_to_priority(struct Env *env, int ind);
 void snapshot();
 
 struct Env* search_runnable_on_p(int indPriority, struct Env ** prev);
