@@ -15,7 +15,6 @@ void sched_halt(void);
 void
 sched_yield(void)
 {
-	// cprintf("-----------------SCHED_YIELDS!!! %d runs: %d\n",count_sched_yields, count_total_runs);
 #ifdef SCHED_ROUND_ROBIN
 	count_sched_yields++;
 	// Implement simple round-robin scheduling.
@@ -36,35 +35,27 @@ sched_yield(void)
 	// Your code here - Round robin
 	int currind = curenv == NULL ? -1 : ENVX(curenv->env_id);
 	int ind = currind + 1;
-	while (ind < NENV &&
-	       envs[ind].env_status !=
-	               ENV_RUNNABLE) {  // iteramos el arreglo hasta el final.
+	while (ind < NENV && envs[ind].env_status != ENV_RUNNABLE) {  // iteramos el arreglo hasta el final.
 		ind++;
 	}
 
 	if (ind < NENV) {  // Se encontro
-		// cprintf("----- Found process ind: %d!\n",ind);
 		env_run(&envs[ind]);
 	}
 
 	ind = 0;
-	while (ind < currind &&
-	       envs[ind].env_status !=
-	               ENV_RUNNABLE) {  // iteramos el arreglo circularmente.
+	while (ind < currind && envs[ind].env_status !=  ENV_RUNNABLE) {  // iteramos el arreglo circularmente.
 		ind++;
 	}
 
 
 	if (ind < currind) {
-		// cprintf("----- Found process ind: %d!\n",ind);
+		// Found process 
 		env_run(&envs[ind]);
 	}
 	// Found nothing , if not runnning then reset to null
 	if (curenv && envs[ind].env_status != ENV_RUNNING) {
-		// cprintf("----- Not found process y no estaba running para continuar!\n");
 		curenv = NULL;
-		//} else{
-		//     cprintf("----- Not found process keep curr %d!\n",curenv);
 	}
 
 #endif
@@ -94,8 +85,7 @@ sched_yield(void)
 			prev = curenv;
 		}
 
-		nextPriority = curenv->env_priority +
-		               1;  // Proba si no hay next.. la siguiente.
+		nextPriority = curenv->env_priority + 1;  // Proba si no hay next.. la siguiente.
 		while (next == NULL && nextPriority < MIN_PRIORITY) {
 			next = search_runnable_on_p(nextPriority, &prev);
 			nextPriority++;
@@ -110,13 +100,8 @@ sched_yield(void)
 	}
 
 	if (next != NULL) {
-		// cprintf("NEXT FOUND AT PRIO %d, next: %08x\n", nextPriority,
-		// next->env_id); lower_priority_env(next, prev);
 		env_run_p(next, prev);
 	}
-	// cprintf("NO NEXT FOUND AT PRIO %d curr is %08x can continue?
-	// %d\n",nextPriority, curenv? curenv->env_id:-1 ,curenv &&
-	// curenv->env_status == ENV_RUNNING? 1 :0); snapshot();
 
 	// No se encontro un next. Fijate si podes seguir con este.. sino reset..
 	if (curenv && curenv->env_status != ENV_RUNNING) {
@@ -149,11 +134,10 @@ sched_halt(void)
 		     envs[i].env_status == ENV_RUNNING ||
 		     envs[i].env_status == ENV_DYING)) {
 			count_sched_idle++;
-			// cprintf("Fell on sched_halt %08x  %d\n", envs[i].env_id,
-			// envs[i].env_status == ENV_RUNNABLE?1:0);
 			break;
 		}
 	}
+
 	if (i == NENV) {
 		cprintf("No runnable environments in the system!\n");
 
@@ -174,20 +158,6 @@ sched_halt(void)
 			        "env %d\n",
 			        total_response_time / total_envs_finished);
 		}
-
-		/*
-		int ind =0;
-		for (ind; ind < NENV; ind++) {
-		        if(envs[ind].env_runs == 0){
-		            continue;
-		        }
-
-		        cprintf("========== turnaround: %d id: %d
-		runs:%d\n",envs[ind].start, envs[ind].env_id,
-		envs[ind].env_runs);
-		}
-		*/
-
 
 		while (1)
 			monitor(NULL);

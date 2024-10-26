@@ -739,7 +739,6 @@ env_free(struct Env *e)
 	snapshot();
 #endif
 
-	// Seguro no hace falta..
 	e->env_priority = 1;
 #endif
 
@@ -781,7 +780,6 @@ env_free(struct Env *e)
 
 	// struct EnvFinished * curr_finished = malloc(sizeof(struct EnvFinished));
 
-	// finished_envs =
 }
 
 //
