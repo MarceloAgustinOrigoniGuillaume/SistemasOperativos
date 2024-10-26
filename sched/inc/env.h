@@ -46,7 +46,6 @@ struct Env {
 	unsigned env_status;      // Status of the environment
 	uint32_t env_runs;        // Number of times environment has run
 	int env_cpunum;           // The CPU that the env is running on
-	unsigned int start;       // number of sched yield it started!
 
 	// Address space
 	pde_t *env_pgdir;  // Kernel virtual address of page dir
@@ -61,7 +60,9 @@ struct Env {
 	envid_t env_ipc_from;    // envid of the sender
 	int env_ipc_perm;        // Perm of page mapping received
 
-	int env_priority;  // Priority of the environment
+
+	unsigned int start;  // number of sched yield it started!
+	int env_priority;    // Priority of the environment
 #ifdef SCHED_PRIORITIES
 	struct Env *priority_next;  // Next on priority
 #endif

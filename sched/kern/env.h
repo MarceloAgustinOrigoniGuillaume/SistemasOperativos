@@ -25,7 +25,9 @@ extern unsigned int count_sched_yields;
 extern unsigned int count_total_runs;
 extern unsigned int total_envs_finished;
 extern unsigned int total_turnaround;
+extern unsigned int max_turnaround;
 extern unsigned int total_response_time;
+extern unsigned int max_response_time;
 extern int tot_slice_switches;
 
 // extern struct EnvFinished * finished_envs;           // All environments

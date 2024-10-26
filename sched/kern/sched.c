@@ -15,6 +15,7 @@ void sched_halt(void);
 void
 sched_yield(void)
 {
+	// cprintf("-----------------SCHED_YIELDS!!! %d runs: %d\n",count_sched_yields, count_total_runs);
 #ifdef SCHED_ROUND_ROBIN
 	count_sched_yields++;
 	// Implement simple round-robin scheduling.
@@ -42,6 +43,7 @@ sched_yield(void)
 	}
 
 	if (ind < NENV) {  // Se encontro
+		// cprintf("----- Found process ind: %d!\n",ind);
 		env_run(&envs[ind]);
 	}
 
@@ -54,12 +56,15 @@ sched_yield(void)
 
 
 	if (ind < currind) {
-		// Found process
+		// cprintf("----- Found process ind: %d!\n",ind);
 		env_run(&envs[ind]);
 	}
 	// Found nothing , if not runnning then reset to null
 	if (curenv && envs[ind].env_status != ENV_RUNNING) {
+		// cprintf("----- Not found process y no estaba running para continuar!\n");
 		curenv = NULL;
+		//} else{
+		//     cprintf("----- Not found process keep curr %d!\n",curenv);
 	}
 
 #endif
@@ -105,8 +110,13 @@ sched_yield(void)
 	}
 
 	if (next != NULL) {
+		// cprintf("NEXT FOUND AT PRIO %d, next: %08x\n", nextPriority,
+		// next->env_id); lower_priority_env(next, prev);
 		env_run_p(next, prev);
 	}
+	// cprintf("NO NEXT FOUND AT PRIO %d curr is %08x can continue?
+	// %d\n",nextPriority, curenv? curenv->env_id:-1 ,curenv &&
+	// curenv->env_status == ENV_RUNNING? 1 :0); snapshot();
 
 	// No se encontro un next. Fijate si podes seguir con este.. sino reset..
 	if (curenv && curenv->env_status != ENV_RUNNING) {
@@ -139,10 +149,11 @@ sched_halt(void)
 		     envs[i].env_status == ENV_RUNNING ||
 		     envs[i].env_status == ENV_DYING)) {
 			count_sched_idle++;
+			// cprintf("Fell on sched_halt %08x  %d\n", envs[i].env_id,
+			// envs[i].env_status == ENV_RUNNABLE?1:0);
 			break;
 		}
 	}
-
 	if (i == NENV) {
 		cprintf("No runnable environments in the system!\n");
 
@@ -157,12 +168,17 @@ sched_halt(void)
 		cprintf("========== cantidad procesos terminados %d\n",
 		        total_envs_finished);
 		if (total_envs_finished > 0) {
-			cprintf("========== cantidad turnaround promedio %d\n",
+			cprintf("========== turnaround promedio %d\n",
 			        total_turnaround / total_envs_finished);
-			cprintf("========== cantidad promedio en empezar un "
-			        "env %d\n",
+			cprintf("========== turnaround maximo  %d\n",
+			        max_turnaround);
+
+			cprintf("========== response time promedio %d\n",
 			        total_response_time / total_envs_finished);
+			cprintf("========== response_time maximo %d\n",
+			        max_response_time);
 		}
+
 
 		while (1)
 			monitor(NULL);
