@@ -154,7 +154,16 @@ sys_exofork(void)
 	newenv->env_tf.tf_regs.reg_eax = 0;
 
 	// Create a new event with the same priority as the current one
+	#ifdef SCHED_PRIORITIES
+	//cprintf("%d---CREATE/FORK ADD OF %08x parent: %08x\n",count_sched_yields, newenv->env_id, curenv->env_id);
+	add_to_priority(newenv, curenv->env_priority);
+	//snapshot();
+	#endif
+	
+	#ifdef SCHED_ROUND_ROBIN
 	newenv->env_priority = curenv->env_priority;
+	#endif
+	
 
 	return newenv->env_id;
 	// panic("sys_exofork not implemented");

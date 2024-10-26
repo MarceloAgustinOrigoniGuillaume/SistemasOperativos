@@ -10,12 +10,14 @@
 #include <kern/cpu.h>
 
 
-extern int last_boost_yield;
-extern int count_sched_yields;
+extern unsigned int last_boost_yield;
+extern unsigned int count_sched_yields;
+extern unsigned int count_total_runs;
 extern unsigned int total_envs_finished;
 extern unsigned int total_turnaround;
 extern unsigned int total_response_time;
 extern int tot_slice_switches;
+
 //extern struct EnvFinished * finished_envs;           // All environments
 
 #ifdef SCHED_PRIORITIES
@@ -27,7 +29,7 @@ struct PriorityInfo{
 extern struct PriorityInfo priorities[MIN_PRIORITY]; // All priorities
 
 // Funciones para prioridad!!
-void lower_priority_env(struct Env *env, struct Env *prev);
+//void lower_priority_env(struct Env *env, struct Env *prev);
 
 void remove_from_priority(struct Env *env, struct Env *prev);
 void add_to_priority(struct Env *env, int ind);
@@ -38,7 +40,7 @@ struct Env* search_runnable_on(struct Env * first, struct Env ** prev);
 struct Env* search_prev_on_p(struct Env * first, struct Env * target);
 struct Env* search_prev_for_p(struct Env * target);
 
-void boost_all();
+void check_boost_all();
 
 //struct Env* update_priority(struct Env * target, int new_priority);
 #endif
@@ -57,8 +59,18 @@ void env_create(uint8_t *binary, enum EnvType type);
 void env_destroy(struct Env *e);  // Does not return if e == curenv
 
 int envid2env(envid_t envid, struct Env **env_store, bool checkperm);
-// The following two functions do not return
+// The following functions do not return
+// En priorities en teoria deberia llamarse a la que le da el prev. Pero se puede delegar llamando 
+// a la de un parametro
+#ifdef SCHED_PRIORITIES
 void env_run(struct Env *e) __attribute__((noreturn));
+void env_run_p(struct Env *e, struct Env *prev_on_priority) __attribute__((noreturn));
+#endif
+
+#ifdef SCHED_ROUND_ROBIN
+void env_run(struct Env *e) __attribute__((noreturn));
+#endif
+
 void context_switch(struct Trapframe *tf) __attribute__((noreturn));
 
 

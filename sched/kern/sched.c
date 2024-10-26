@@ -16,6 +16,7 @@ void sched_halt(void);
 void
 sched_yield(void)
 {
+     //cprintf("-----------------SCHED_YIELDS!!! %d runs: %d\n",count_sched_yields, count_total_runs);
 #ifdef SCHED_ROUND_ROBIN
         count_sched_yields++;
 	// Implement simple round-robin scheduling.
@@ -75,12 +76,7 @@ sched_yield(void)
 	// environment is selected and run every time.
 
 	// Your code here - Priorities
-	
-        count_sched_yields++;
-	if(count_sched_yields-last_boost_yield > BOOST_TIMESLICE){
-	     last_boost_yield = count_sched_yields;
-	     boost_all();
-	}	
+	check_boost_all();
 	// Search_runnable y
 	// Lower priority estan en env.c !
 	// boost_all tambien.. todos ahi.
@@ -91,8 +87,8 @@ sched_yield(void)
 	
 	if(curenv != NULL){
 	     next = search_runnable_on(curenv->priority_next, &prev);
-	     if(prev == NULL && next){
-	          prev =curenv->priority_next;
+	     if(prev == NULL && next == curenv->priority_next){
+	          prev =curenv;
 	     }
 	     
 	     nextPriority= curenv->env_priority+1;// Proba si no hay next.. la siguiente.
@@ -111,25 +107,15 @@ sched_yield(void)
 		
 	if (next != NULL) {
 	        //cprintf("NEXT FOUND AT PRIO %d, next: %08x\n", nextPriority, next->env_id);
-	        if(next->env_runs % 2 == 0){ // Cada 2 env runs..
-	             lower_priority_env(next, prev);
-	             //cprintf("END LOWER PRIORITY next: %08x\n", next->env_id);
-	        }
-		env_run(next);
+	        //lower_priority_env(next, prev);
+		env_run_p(next, prev);
 	}
 	//cprintf("NO NEXT FOUND AT PRIO %d curr is %08x can continue? %d\n",nextPriority, curenv? curenv->env_id:-1 ,curenv && curenv->env_status == ENV_RUNNING? 1 :0);
 	//snapshot();
 		
 	// No se encontro un next. Fijate si podes seguir con este.. sino reset..
-        if(curenv){
-            if( curenv->env_status != ENV_RUNNING){
-                 curenv = NULL;
-	         //cprintf("RESETTED %d\n",curenv->env_status);
-            } else if(curenv->env_runs % 2 == 0){ // Cada 2 env runs..
-	         //cprintf("--->WAS RUNNING\n");
-                 lower_priority_env(curenv, search_prev_for_p(curenv));
-	         //cprintf("END LOWER PRIORITY next: %08x\n", curenv->env_id);
-            }
+        if(curenv && curenv->env_status != ENV_RUNNING){
+            curenv = NULL;
         }
 
 #endif
@@ -151,7 +137,7 @@ void
 sched_halt(void)
 {
 	int i;
-	//cprintf("Fell on sched_halt\n");
+	cprintf("Fell on sched_halt\n");
 	// cprintf("In theory, this should show only at the end when theres no more env to run\n");
 	// For debugging and testing purposes, if there are no runnable
 	// environments in the system, then drop into the kernel monitor.
@@ -165,15 +151,19 @@ sched_halt(void)
 	}
 	if (i == NENV) {
 		cprintf("No runnable environments in the system!\n");
-		cprintf("========== ALGUNA ESTADISTICA\n");
+		
+		cprintf("========== ESTADISTICAS\n");
 		cprintf("========== cantidad de llamados al sched %d\n", count_sched_yields);
 		cprintf("========== cantidad timeslices idle %d\n", count_sched_idle);
+		
+		cprintf("========== cantidad de total de runs %d\n", count_total_runs);
 		cprintf("========== cantidad procesos terminados %d\n", total_envs_finished);
 		if(total_envs_finished > 0){
 		      cprintf("========== cantidad turnaround promedio %d\n", total_turnaround/total_envs_finished);
 		      cprintf("========== cantidad promedio en empezar un env %d\n", total_response_time/total_envs_finished);
 		}
 		
+		/*
 	        int ind =0;
 	        for (ind; ind < NENV; ind++) {
 	                if(envs[ind].env_runs == 0){
@@ -183,6 +173,7 @@ sched_halt(void)
 	                cprintf("========== turnaround: %d id: %d runs:%d\n",envs[ind].start, 
 	                                                             envs[ind].env_id, envs[ind].env_runs); 
 	        }
+	        */
 
 		
 		
