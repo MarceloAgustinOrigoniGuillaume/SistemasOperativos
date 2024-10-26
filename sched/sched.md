@@ -41,3 +41,13 @@ Ejecuto la siguiente instrucción  `-> pop %esp` para mover al stack pointer el 
 `iret // Volvemos con iret modificando los registros eip, cs y esp tomando los valores restantes del stack `
 
 ![alt_text](cs_informe_imagenes/context_switch_registers_after_iret.png "after_iret")
+
+
+
+
+# Explicacion de scheduler de prioridad
+
+El scheduler de prioridades planteado funciona con listas enlazadas, una para cada prioridad, que estan sobre el arreglo envs. Similar a como funciona env_link. Se tiene priority_next. Que apunta al siguiente en la prioridad. Aparte de ser una lista enlazada. Se tiene una referencia al primero y ultimo. Esto se puede observar en la struct
+
+![alt_text](cs_informe_imagenes/priority_info.png "after_iret")
+
