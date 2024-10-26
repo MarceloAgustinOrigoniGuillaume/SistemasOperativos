@@ -67,7 +67,7 @@ static void remove_from_priority(struct Env *env, struct Env *prev){
      //    cprintf("ENV == PREV ?? WTF \n");
      //     return;
      //}
-     int ind = env->env_priority-1;
+     int ind = PRIO_IND(env);
      if(env == priorities[ind].first){ // Era el primero!
           //cprintf("WAS FIRST AT REMOVE\n");
           if(priorities[ind].last == env){ // Era el unico.
@@ -111,9 +111,9 @@ void check_boost_all(){
              envs[i].env_status == ENV_RUNNING ||
              envs[i].env_status == ENV_NOT_RUNNABLE ){
                 //cprintf("__BOOST FOUND: %08x prio: %d\n",envs[i].env_id, envs[i].env_priority );
-             	add_to_priority(&envs[i], 1);
+             	add_to_priority(&envs[i], MAX_PRIORITY);
                 //cprintf("__BOOST to id: %08x prio: %d next: %08x\n",envs[i].env_id, envs[i].env_priority,
-                //envs[i].priority_next?envs[i].priority_next->env_id:-1 );
+                //GET_ID(envs[i].priority_next));
 	  }
           i++;
     }
@@ -127,7 +127,7 @@ struct Env* search_runnable_on_p(int ind,struct Env** prev){
 }
 
 struct Env* search_runnable_on(struct Env* curr, struct Env** prev){     
-     //cprintf("SEARCH RUNNABLE BEGIN AT ENV ID? %08x\n", curr != NULL? curr->env_id: -1);
+     //cprintf("SEARCH RUNNABLE BEGIN AT ENV ID? %08x\n", GET_ID(curr));
      // Setea a null por las dudas
      *prev = NULL;
      
@@ -154,7 +154,7 @@ struct Env* search_runnable_on(struct Env* curr, struct Env** prev){
      curr = next;
      // Next es el next del curr.
      next = curr->priority_next;
-     //cprintf("ITERATE NOW null? prv: %d , curr: %d, next:%d \n",*prev?(*prev)->env_id:-1,curr?curr->env_id:-1,next?next->env_id:-1);
+     //cprintf("ITERATE NOW null? prv: %d , curr: %d, next:%d \n",GET_ID(*prev),GET_ID(curr),GET_ID(next));
      
      while(curr->env_status != ENV_RUNNABLE && next != NULL){
           // No era runnable. Otra vez.. curr va a prev.
@@ -201,7 +201,7 @@ struct Env* search_prev_on_p(struct Env* curr, struct Env* target){
 }
 
 struct Env* search_prev_for_p(struct Env* target){
-       return search_prev_on_p(priorities[target->env_priority-1].first ,target); 
+       return search_prev_on_p(priorities[PRIO_IND(target)].first ,target); 
 }
 
 
@@ -213,7 +213,7 @@ void snapshot(){
          int count =0;
          while(curr){
               if(curr == last){
-                  cprintf("REPEATED ITM AT LIST %08x next %08x\n", curr->env_id, curr->priority_next?curr->priority_next->env_id: -1);
+                  cprintf("REPEATED ITM AT LIST %08x next %08x\n", curr->env_id, GET_ID(curr->priority_next) );
                   curr = curr->priority_next;
                   continue;
               }
@@ -223,7 +223,7 @@ void snapshot(){
               
               count++;
          }
-         cprintf("\n---------------------%d LAST: %08x\n",count, priorities[i].last? priorities[i].last->env_id: -1);         
+         cprintf("\n---------------------%d LAST: %08x\n",count, GET_ID(priorities[i].last));         
      }
      separ();
 }
@@ -240,7 +240,7 @@ static void lower_priority_env(struct Env *env, struct Env *prev, int new_priori
 	     return; // Boosting es por separado.
 	}
 	
-       //cprintf("%d LOWER PRIO TO %d? prv: %08x , curr: %08x, next%08x \n",count_sched_yields, new_priority,prev?(prev)->env_id:-1,env?env->env_id:-1,env->priority_next?env->priority_next->env_id:-1);	
+       //cprintf("%d LOWER PRIO TO %d? prv: %08x , curr: %08x, next%08x \n",count_sched_yields, new_priority,GET_ID(prev) , GET_ID(env), GET_ID(env->priority_next));	
 	remove_from_priority(env,prev);
        //cprintf("REMOVED FROM LAST ONE!\n");	
         add_to_priority(env, new_priority);
@@ -810,9 +810,7 @@ env_run_p(struct Env *e, struct Env *prev_on_priority)
 
 	//cprintf("------->RUN ENV ID: %08x WITH PRIOR %d PREV ON PRIO %08x \n", e->env_id, 
 	//                                                                      e->env_priority,
-	//                                                                      prev_on_priority? prev_on_priority->env_id:
-	// 
-        //                                                             -1);
+	//                                                                      GET_ID(prev_on_priority));
 	
 	curenv = e;
 	

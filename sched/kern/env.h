@@ -4,12 +4,17 @@
 #define JOS_KERN_ENV_H
 
 #define MAX_PRIORITY 1
+#ifdef SCHED_PRIORITIES
 #define MIN_PRIORITY 10
 #define BOOST_TIMESLICE 150
 
 #define RUNS_UNTIL_LOWER 5
 #define LOWER_ON_INTERRUPT 3
 
+#define PRIO_IND(env) env->env_priority-MAX_PRIORITY
+
+#endif
+#define GET_ID(env) env? env->env_id : -1
 
 #include <inc/env.h>
 #include <kern/cpu.h>

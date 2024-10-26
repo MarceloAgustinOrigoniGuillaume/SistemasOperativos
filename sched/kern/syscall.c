@@ -472,7 +472,7 @@ sys_get_priority(envid_t envid, void *va) {
 	if ((r = envid2env(envid, &env, 1)))
 		return r;
 
-	*(int *) va = env->env_priority;
+	*((int *) va) = env->env_priority;
 	return 0;
 }
 
