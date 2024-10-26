@@ -68,6 +68,13 @@ i386_init(void)
 		ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
+	#ifdef SCHED_SYS_PRIORITIES	
+	ENV_CREATE(user_lowerpriority, ENV_TYPE_USER);
+	ENV_CREATE(user_addpriority, ENV_TYPE_USER);
+	ENV_CREATE(user_priorityOFR, ENV_TYPE_USER);
+	ENV_CREATE(user_cpuintensive, ENV_TYPE_USER);
+	#else
+	
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
@@ -76,38 +83,16 @@ i386_init(void)
 	ENV_CREATE(user_forktree, ENV_TYPE_USER);
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
 	ENV_CREATE(user_pingpong, ENV_TYPE_USER);	
-	ENV_CREATE(user_pingpong, ENV_TYPE_USER);
-	
-	//ENV_CREATE(user_idle, ENV_TYPE_USER);
-	//ENV_CREATE(user_idle, ENV_TYPE_USER);
-	//ENV_CREATE(user_idle, ENV_TYPE_USER);
-	//ENV_CREATE(user_idle, ENV_TYPE_USER);
-	//ENV_CREATE(user_spin0, ENV_TYPE_USER);
-	
-	//ENV_CREATE(user_primes, ENV_TYPE_USER);
-	//ENV_CREATE(user_pingpong, ENV_TYPE_USER);
+	ENV_CREATE(user_pingpong, ENV_TYPE_USER);	
 	ENV_CREATE(user_forktree, ENV_TYPE_USER);
-	ENV_CREATE(user_lowerpriority, ENV_TYPE_USER);
 	ENV_CREATE(user_forktree, ENV_TYPE_USER);
-	//ENV_CREATE(user_hello, ENV_TYPE_USER);
-	//ENV_CREATE(user_hello, ENV_TYPE_USER);
-	//ENV_CREATE(user_hello, ENV_TYPE_USER);
-	//ENV_CREATE(user_hello, ENV_TYPE_USER);
-	//ENV_CREATE(user_hello, ENV_TYPE_USER);
-	//ENV_CREATE(user_hello, ENV_TYPE_USER);
-	//ENV_CREATE(user_pingpong, ENV_TYPE_USER);
-	//ENV_CREATE(user_pingpong, ENV_TYPE_USER);
 	ENV_CREATE(user_stresssched, ENV_TYPE_USER);
 	ENV_CREATE(user_stresssched, ENV_TYPE_USER);
-	//ENV_CREATE(user_stresssched, ENV_TYPE_USER);
-	//ENV_CREATE(user_hello, ENV_TYPE_USER);
+	ENV_CREATE(user_stresssched, ENV_TYPE_USER);	
+	
+	#endif
+
 #endif  // TEST*
-
-	// Eliminar esta llamada una vez completada la parte 1
-	// e implementado sched_yield().
-	//env_run(&envs[0]);
-
-	//curenv = &envs[0]; // Simple exec first env by default. 
 	// Schedule and run the first user environment!
 	sched_yield();
 }

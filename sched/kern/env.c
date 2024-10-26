@@ -33,11 +33,6 @@ static struct Env *env_free_list;  // Free environment list
 #ifdef SCHED_PRIORITIES
 struct PriorityInfo priorities[MIN_PRIORITY]; // All priorities
 
-
-static void separ(){
-   cprintf("---ENDSNAP\n");
-}
-
 static void add_to_priority(struct Env *env, int ind){
 	env->env_priority = ind;
 	ind--;
@@ -92,13 +87,15 @@ static void remove_from_priority(struct Env *env, struct Env *prev){
 
 
 void check_boost_all(){
-     count_sched_yields++;
-     if(count_sched_yields-last_boost_yield <= BOOST_TIMESLICE){
-          return;
-     }
-     last_boost_yield = count_sched_yields;
-    
-    //cprintf("BOOOSTING ALL!!\n");
+    count_sched_yields++;
+    if(count_sched_yields-last_boost_yield <= BOOST_TIMESLICE){
+        return;
+    }
+    last_boost_yield = count_sched_yields;
+    #ifdef SCHED_VERB
+      cprintf("BOOOSTING ALL TO MAX PRIORITY!!\n");
+    #endif    
+    //
     // Reset priorities.
     for(int i = 0; i < MIN_PRIORITY ; i++){
         priorities[i].first = NULL;
@@ -110,15 +107,14 @@ void check_boost_all(){
           if(envs[i].env_status == ENV_RUNNABLE ||
              envs[i].env_status == ENV_RUNNING ||
              envs[i].env_status == ENV_NOT_RUNNABLE ){
-                //cprintf("__BOOST FOUND: %08x prio: %d\n",envs[i].env_id, envs[i].env_priority );
              	add_to_priority(&envs[i], MAX_PRIORITY);
-                //cprintf("__BOOST to id: %08x prio: %d next: %08x\n",envs[i].env_id, envs[i].env_priority,
-                //GET_ID(envs[i].priority_next));
 	  }
           i++;
     }
     
-    //snapshot();
+    #ifdef SCHED_DEBUG
+         snapshot();
+    #endif
 }
 
 
@@ -204,49 +200,65 @@ struct Env* search_prev_for_p(struct Env* target){
        return search_prev_on_p(priorities[PRIO_IND(target)].first ,target); 
 }
 
+#ifdef SCHED_DEBUG
+static void separ(){ // Para GDB
+   cprintf("---ENDSNAP\n");
+}
 
 void snapshot(){
      for(int i = 0; i < MIN_PRIORITY ; i++){
-         cprintf("---------------------PRIORITY %d GOT\n", i);
+         cprintf("++PRIORITY QUEUE %02d: ", i);
          struct Env *curr = priorities[i].first;
-         struct Env *last = NULL;
+         if(!curr){
+              cprintf("IS EMPTY!\n", i);
+              continue;
+         }         
          int count =0;
          while(curr){
-              if(curr == last){
-                  cprintf("REPEATED ITM AT LIST %08x next %08x\n", curr->env_id, GET_ID(curr->priority_next) );
-                  curr = curr->priority_next;
-                  continue;
-              }
-              cprintf("%d:%08x-%d?",count, curr->env_id, curr == last? 1:0);
-              last = curr;
+              cprintf("%d::%08x-%d?",count, curr->env_id, curr->env_status == ENV_RUNNABLE? 1:0);
               curr = curr->priority_next;
               
               count++;
          }
-         cprintf("\n---------------------%d LAST: %08x\n",count, GET_ID(priorities[i].last));         
+         #ifdef SCHED_DEBUG
+         cprintf("\n++PRIORITY QUEUE %02d LAST WAS: %08x\n",count, GET_ID(priorities[i].last));
+         #else
+         cprintf("\n");
+         #endif
      }
      separ();
 }
+#endif
 
 static void lower_priority_env(struct Env *env, struct Env *prev, int new_priority){
-
-        //cprintf("-------> LOWER %08x to %d from %d\n",env->env_id, new_priority, env->env_priority);
 	
-	if(new_priority > MIN_PRIORITY){
-	    new_priority = MIN_PRIORITY;
-	}
+       if(new_priority > MIN_PRIORITY){
+	   new_priority = MIN_PRIORITY;
+       }
 	
-	if (new_priority == env->env_priority) {
-	     return; // Boosting es por separado.
-	}
+       if (new_priority == env->env_priority) {
+	    return; // Boosting es por separado.
+       }
 	
-       //cprintf("%d LOWER PRIO TO %d? prv: %08x , curr: %08x, next%08x \n",count_sched_yields, new_priority,GET_ID(prev) , GET_ID(env), GET_ID(env->priority_next));	
-	remove_from_priority(env,prev);
-       //cprintf("REMOVED FROM LAST ONE!\n");	
-        add_to_priority(env, new_priority);
-        
-       //cprintf("ADDED TO NEW ONE!\n");
-       //snapshot();
+       #ifdef SCHED_VERB
+       
+       #ifdef SCHED_DEBUG
+       cprintf("AT %d ENV: %08x PRIORITY %02d TO %02d prv: %08x , next %08x \n",
+       count_sched_yields, GET_ID(env) , env->env_priority, new_priority,
+       GET_ID(prev), GET_ID(env->priority_next));
+       #else
+       
+       cprintf("AT %d ENV: %08x PRIORITY %02d TO %02d\n", count_sched_yields, GET_ID(env) , env->env_priority, new_priority);
+       #endif
+       
+       #endif
+       
+       remove_from_priority(env,prev);
+       add_to_priority(env, new_priority);
+       
+       #ifdef SCHED_DEBUG 
+       snapshot();
+       #endif
 }
 
 // Para trap/syscalls
@@ -642,9 +654,17 @@ env_create(uint8_t *binary, enum EnvType type)
 	
 	// La primera vez que se crea se inicializa aca ... Sino en el fork.
 	#ifdef SCHED_PRIORITIES
-	//cprintf("%d---CREATE/FIRST ADD OF %08x\n",count_sched_yields, env->env_id);
+	
+	#ifdef SCHED_VERB
+	cprintf("AT %d CREATE/FIRST ADD OF %08x\n",count_sched_yields, env->env_id);
+	#endif
+	
 	add_to_priority(env, 1);
-	//snapshot();
+	
+	#ifdef SCHED_DEBUG
+	snapshot();
+	#endif
+	
 	#endif
 	
 	#ifdef SCHED_ROUND_ROBIN
@@ -674,10 +694,15 @@ env_free(struct Env *e)
 	
 	#ifdef SCHED_PRIORITIES
 	//Primero saquesmolo de la lista/queue de prioridad.
-	
-	//cprintf("%d---REMOVE/FREE OF %08x %d\n",count_sched_yields, e->env_id, e->env_status);
+	#ifdef SCHED_VERB
+	cprintf("AT %d REMOVE/FREE OF %08x PRIORITY %02d\n",count_sched_yields, e->env_id, e->env_priority);
+	#endif
 	remove_from_priority(e, search_prev_for_p(e));
-	//snapshot();
+	
+	#ifdef SCHED_DEBUG
+	snapshot();
+	#endif
+	
 	// Seguro no hace falta..
 	e->env_priority = 1; 
 	#endif
@@ -744,9 +769,7 @@ env_destroy(struct Env *e)
 	env_free(e);
 
 	if (curenv == e) {
-		//cprintf("[%08x] env_destroy %08x\n", curenv ? curenv->env_id : 0, e->env_id);
 		curenv = NULL;
-		////cprintf("[%08x] env_destroy %08x\n", curenv ? curenv->env_id : 0, e->env_id);
 		sched_yield();
 	}
 }
@@ -808,9 +831,9 @@ env_run_p(struct Env *e, struct Env *prev_on_priority)
 		prevenv->env_status = ENV_RUNNABLE;
 	}
 
-	//cprintf("------->RUN ENV ID: %08x WITH PRIOR %d PREV ON PRIO %08x \n", e->env_id, 
-	//                                                                      e->env_priority,
-	//                                                                      GET_ID(prev_on_priority));
+        #ifdef SCHED_DEBUG
+	cprintf("AT %d_%d RUN ENV: %08x WITH PRIORITY %02d\n", count_sched_yields,count_total_runs, e->env_id, e->env_priority);
+	#endif
 	
 	curenv = e;
 	
