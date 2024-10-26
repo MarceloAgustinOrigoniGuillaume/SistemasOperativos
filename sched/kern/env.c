@@ -24,7 +24,6 @@ unsigned int max_turnaround = 0;
 
 unsigned int total_response_time = 0;
 unsigned int max_response_time = 0;
-// struct EnvFinished * finished_envs = NULL;
 
 int tot_slice_switches = 0;
 
@@ -42,7 +41,6 @@ add_to_priority(struct Env *env, int ind)
 	env->env_priority = ind;
 	ind--;
 	if (priorities[ind].first == NULL) {
-		// cprintf("------->WAS FIRST AT ADD\n");
 		//  Was empty.
 		env->priority_next = NULL;
 		priorities[ind].first = env;
@@ -50,7 +48,6 @@ add_to_priority(struct Env *env, int ind)
 
 		return;
 	}
-	// cprintf("------->WAS NOT FIRST AT ADD, curr last %08x \n",priorities[ind].last->env_id);
 	env->priority_next = NULL;
 	priorities[ind].last->priority_next = env;
 	priorities[ind].last = env;
@@ -67,13 +64,9 @@ update_priority_fork(struct Env *forked, struct Env *original)
 static void
 remove_from_priority(struct Env *env, struct Env *prev)
 {
-	// if(env == prev){
-	//     cprintf("ENV == PREV ?? WTF \n");
-	//      return;
-	// }
+
 	int ind = PRIO_IND(env);
 	if (env == priorities[ind].first) {  // Era el primero!
-		// cprintf("WAS FIRST AT REMOVE\n");
 		if (priorities[ind].last == env) {  // Era el unico.
 			priorities[ind].first = NULL;
 			priorities[ind].last = NULL;
@@ -82,7 +75,6 @@ remove_from_priority(struct Env *env, struct Env *prev)
 		}
 		return;
 	}
-	// cprintf("WAS NOT FIRST AT REMOVE\n");
 
 	// prev != null ya que no fue el primero.
 	prev->priority_next = env->priority_next;  // Esto hizo el remove.
@@ -136,7 +128,6 @@ search_runnable_on_p(int ind, struct Env **prev)
 struct Env *
 search_runnable_on(struct Env *curr, struct Env **prev)
 {
-	// cprintf("SEARCH RUNNABLE BEGIN AT ENV ID? %08x\n", GET_ID(curr));
 	//  Setea a null por las dudas
 	*prev = NULL;
 
@@ -146,13 +137,11 @@ search_runnable_on(struct Env *curr, struct Env **prev)
 	}
 	// Se guardo el next.
 	if (curr->env_status == ENV_RUNNABLE) {
-		// cprintf("SEARCH RUNNABLE WAS CURR RUNNABLE? %d\n", curr->env_id);
 		return curr;
 	}
 	struct Env *next = curr->priority_next;
 
 	if (next == NULL) {  // Only element in list.
-		// cprintf("SEARCH RUNNABLE NO RUNNABLE NO NEXT?\n");
 		return NULL;
 	}
 
@@ -163,7 +152,6 @@ search_runnable_on(struct Env *curr, struct Env **prev)
 	curr = next;
 	// Next es el next del curr.
 	next = curr->priority_next;
-	// cprintf("ITERATE NOW null? prv: %d , curr: %d, next:%d \n",GET_ID(*prev),GET_ID(curr),GET_ID(next));
 
 	while (curr->env_status != ENV_RUNNABLE && next != NULL) {
 		// No era runnable. Otra vez.. curr va a prev.
@@ -185,7 +173,6 @@ search_prev_on_p(struct Env *curr, struct Env *target)
 	struct Env *next = curr->priority_next;
 	// Se guardo el next.
 	if (curr == target) {
-		// cprintf("------------TARGET WAS FIRST!!\n");
 		return prev;
 	}
 
@@ -742,7 +729,6 @@ env_free(struct Env *e)
 	snapshot();
 #endif
 
-	// Seguro no hace falta..
 	e->env_priority = 1;
 #endif
 
@@ -785,9 +771,7 @@ env_free(struct Env *e)
 		max_turnaround = e->start;
 	}
 
-	// struct EnvFinished * curr_finished = malloc(sizeof(struct EnvFinished));
 
-	// finished_envs =
 }
 
 //

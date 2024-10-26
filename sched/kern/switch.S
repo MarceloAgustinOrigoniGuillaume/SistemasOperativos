@@ -8,14 +8,6 @@
  */
 
 /*
- 	mov rax, 0x4 // valor inmediato a registro
-	mov [rdx], -147 // valor inmediato a memoria
-	mov rdx, rax // registro a registro
-	mov [rdx], rax //registro a memoria
-	mov rdx, [rax] //memoria a registro
-*/
-
-/*
         |    ...    |  mas cosas de antes.
         |  env_tf*  |   
         |  ret addr |   <- esp 
