@@ -477,8 +477,6 @@ sys_get_priority(envid_t envid, void *va) {
 }
 
 
-
-
 static int
 sys_lower_priority(envid_t envid, int priority) {
 
