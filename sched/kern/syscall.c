@@ -13,9 +13,6 @@
 #include <kern/sched.h>
 #include <kern/spinlock.h>
 
-#define MAX_PRIORITY 1
-#define MIN_PRIORITY 20
-
 
 static int
 check_perm(int perm, pte_t *pte)

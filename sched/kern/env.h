@@ -3,11 +3,14 @@
 #ifndef JOS_KERN_ENV_H
 #define JOS_KERN_ENV_H
 
-#define MIN_PRIORITY 20
+#define MAX_PRIORITY 1
+#define MIN_PRIORITY 4
+#define BOOST_TIMESLICE 100
 #include <inc/env.h>
 #include <kern/cpu.h>
 
 
+extern int last_boost_yield;
 extern int count_sched_yields;
 extern unsigned int total_envs_finished;
 extern unsigned int total_turnaround;
@@ -21,17 +24,21 @@ struct PriorityInfo{
       struct Env* last;
 };
 
-extern struct PriorityInfo* priorities; // All priorities
+extern struct PriorityInfo priorities[MIN_PRIORITY]; // All priorities
 
 // Funciones para prioridad!!
 void lower_priority_env(struct Env *env, struct Env *prev);
 
 void remove_from_priority(struct Env *env, struct Env *prev);
 void add_to_priority(struct Env *env, int ind);
+void snapshot();
 
 struct Env* search_runnable_on_p(int indPriority, struct Env ** prev);
+struct Env* search_runnable_on(struct Env * first, struct Env ** prev);
 struct Env* search_prev_on_p(struct Env * first, struct Env * target);
 struct Env* search_prev_for_p(struct Env * target);
+
+void boost_all();
 
 //struct Env* update_priority(struct Env * target, int new_priority);
 #endif

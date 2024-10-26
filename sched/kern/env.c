@@ -15,6 +15,7 @@
 #include <kern/cpu.h>
 #include <kern/spinlock.h>
 
+int last_boost_yield = 0;
 int count_sched_yields = 0;
 unsigned int total_envs_finished = 0;
 unsigned int total_turnaround = 0;
@@ -29,14 +30,41 @@ static struct Env *env_free_list;  // Free environment list
 
 
 #ifdef SCHED_PRIORITIES
-struct PriorityInfo* priorities = NULL; // All priorities
+struct PriorityInfo priorities[MIN_PRIORITY]; // All priorities
 
 
 // Busca en la lista de la prioridad.
 // Y guarda en prev el valor anterior.
-struct Env* search_runnable_on_p(int ind, struct Env** prev){
-     struct Env* curr = priorities[ind].first;
+struct Env* search_runnable_on_p(int ind,struct Env** prev){
+       return search_runnable_on(priorities[ind].first,prev);
+}
+
+void boost_all(){
+    cprintf("BOOOSTING ALL!!\n");
+    // Reset priorities.
+    for(int i = 0; i < MIN_PRIORITY ; i++){
+        priorities[i].first = NULL;
+        priorities[i].last = NULL;
+    }
      
+    int i =0;
+    while(i < NENV){ // iteramos el arreglo hasta el final.
+          if(envs[i].env_status == ENV_RUNNABLE ||
+             envs[i].env_status == ENV_RUNNING){
+                cprintf("__BOOST FOUND: %08x %d ",envs[i].env_id, envs[i].env_priority );
+             	add_to_priority(&envs[i], 1);
+                cprintf("__BOOST AFTER: %08x %d next: %08x\n",envs[i].env_id, envs[i].env_priority,
+                envs[i].priority_next?envs[i].priority_next->env_id:-1 );
+	  }
+          i++;
+    }
+    
+    //snapshot();
+}
+
+
+struct Env* search_runnable_on(struct Env* curr, struct Env** prev){     
+     //cprintf("SEARCH RUNNABLE BEGIN AT ENV ID? %08x\n", curr != NULL? curr->env_id: -1);
      // Setea a null por las dudas
      *prev = NULL;
      
@@ -44,13 +72,15 @@ struct Env* search_runnable_on_p(int ind, struct Env** prev){
      if(curr == NULL){
          return NULL;
      }
-     struct Env* next = curr->priority_next;          
      // Se guardo el next.
      if(curr->env_status == ENV_RUNNABLE){
+          //cprintf("SEARCH RUNNABLE WAS CURR RUNNABLE? %d\n", curr->env_id);
           return curr;
      }
+     struct Env* next = curr->priority_next;          
      
      if(next == NULL){ // Only element in list.
+          //cprintf("SEARCH RUNNABLE NO RUNNABLE NO NEXT?\n");
          return NULL;
      }
      
@@ -61,6 +91,7 @@ struct Env* search_runnable_on_p(int ind, struct Env** prev){
      curr = next;
      // Next es el next del curr.
      next = curr->priority_next;
+     //cprintf("ITERATE NOW null? prv: %d , curr: %d, next:%d \n",*prev?(*prev)->env_id:-1,curr?curr->env_id:-1,next?next->env_id:-1);
      
      while(curr->env_status != ENV_RUNNABLE && next != NULL){
           // No era runnable. Otra vez.. curr va a prev.
@@ -80,6 +111,7 @@ struct Env* search_prev_on_p(struct Env* curr, struct Env* target){
      struct Env* next = curr->priority_next;          
      // Se guardo el next.
      if(curr == target){
+          //cprintf("------------TARGET WAS FIRST!!\n");
           return prev;
      }
      
@@ -109,55 +141,106 @@ struct Env* search_prev_for_p(struct Env* target){
        return search_prev_on_p(priorities[target->env_priority-1].first ,target); 
 }
 
+static void separ(){
+   cprintf("---ENDSNAP\n");
+}
+
+void snapshot(){
+     for(int i = 0; i < MIN_PRIORITY ; i++){
+         cprintf("---------------------PRIORITY %d GOT\n", i);
+         struct Env *curr = priorities[i].first;
+         int count =0;
+         while(curr){
+              cprintf("%d:%08x-%d?",count, curr->env_id, curr->env_status == ENV_RUNNABLE? 1:0);
+              curr = curr->priority_next;
+              count++;
+         }
+         cprintf("\n---------------------%d LAST: %08x\n",count, priorities[i].last? priorities[i].last->env_id: -1);         
+     }
+     separ();
+}
+
+
 void add_to_priority(struct Env *env, int ind){
+        //cprintf("------->SNAP ADD \n");
+        //snapshot();
 	env->env_priority = ind;
 	ind--;
 	if(priorities[ind].first == NULL){
+  	    //cprintf("------->ENV ID: %08x TO PRIORITY %d  first\n", env->env_id, ind+1);
 	     // Was empty.
+	     env->priority_next = NULL;
 	     priorities[ind].first = env;
 	     priorities[ind].last = env;
-	     env->priority_next = NULL;
 	     
 	     return;
 	}
+	
+	//cprintf("--------->ENV ID: %08x TO PRIORITY %d ,last, after %08x\n", env->env_id, ind+1,priorities[ind].last->env_id);
+	env->priority_next = NULL;
 	priorities[ind].last->priority_next = env;
 	priorities[ind].last = env;
 }
 
+
 // Asume el prev es el dado. Y prev == null significa es el primero. Y viceversa.
 void remove_from_priority(struct Env *env, struct Env *prev){
-     if(env == priorities[env->env_priority].first){ // Era el primero!
-          if(priorities[env->env_priority].last == env){ // Era el unico.
-              priorities[env->env_priority].first = NULL;
-              priorities[env->env_priority].last = NULL;
+     //cprintf("------->SNAP REMOVE \n");
+     //snapshot();
+     
+     if(env == prev){
+         //cprintf("ENV == PREV ?? WTF \n");
+          return;
+     }
+    //cprintf("REMOVE AND ENV != PREV ?? %08x  , %08x \n", env->env_id , prev? prev->env_id: -1);
+     int ind = env->env_priority-1;
+    //cprintf("ON PRIO != PREV ?? %08x  , %08x \n", priorities[ind].first? priorities[ind].first->env_id: -1, 
+     //priorities[ind].last? priorities[ind].last->env_id: -1);
+
+     if(env == priorities[ind].first){ // Era el primero!
+          if(priorities[ind].last == env){ // Era el unico.
+              priorities[ind].first = NULL;
+              priorities[ind].last = NULL;
           } else{
-              priorities[env->env_priority].first = priorities[env->env_priority].last;
+              priorities[ind].first = env->priority_next;
           }
+          
+	//cprintf("after pop PRIORITY %d  First %08x last %08x\n", ind+1, priorities[ind].first? priorities[ind].first->env_id:-1,priorities[ind].last ? priorities[ind].last->env_id : -1);
+          
           return;
      }
      
      // prev != null ya que no fue el primero.
      prev->priority_next = env->priority_next; // Esto hizo el remove.
       
-     if(env == priorities[env->env_priority].last){ // Mantene actualizado.
-          priorities[env->env_priority].last = prev;
+     if(env == priorities[ind].last){ // Mantene actualizado.
+          priorities[ind].last = prev;
      }
+     
+    //cprintf("after pop PRIORITY %d  First %08x last %08x\n", ind+1, priorities[ind].first? priorities[ind].first->env_id:-1,priorities[ind].last ? priorities[ind].last->env_id : -1);
+     
 }
 
 void lower_priority_env(struct Env *env, struct Env *prev){
 	// Boosting y lowering ..
+
 	
 	int new_priority = 1;
 	if (env->env_priority < MIN_PRIORITY) {
 	      new_priority = env->env_priority + 1;
-	} else if (env->env_runs % 3 != 0) { // Es min priority
-	      // Since on sched yield llama lower si runs % 2 == 0 , y aca es % 3==0.. es igual a %6 ==0
-	      // Para el boost.
-	      return;
 	}
 	
+	//cprintf("---------------------LOWER PRIOR TARGET %d\n", new_priority);
+	
+       //cprintf("LOWER PRIO TO %d? prv: %08x , curr: %08x, next%08x \n", new_priority,prev?(prev)->env_id:-1,env?env->env_id:-1,env->priority_next?env->priority_next->env_id:-1);	
 	remove_from_priority(env,prev);
-        add_to_priority(env, new_priority);	
+       //cprintf("REMOVED FROM LAST ONE!\n");	
+        add_to_priority(env, new_priority);
+        
+       //snapshot();
+
+       //cprintf("ADDED TO NEW ONE!\n");
+       //snapshot();
 }
 
 
@@ -644,9 +727,9 @@ env_destroy(struct Env *e)
 	env_free(e);
 
 	if (curenv == e) {
-		// cprintf("[%08x] env_destroy %08x\n", curenv ? curenv->env_id : 0, e->env_id);
+		//cprintf("[%08x] env_destroy %08x\n", curenv ? curenv->env_id : 0, e->env_id);
 		curenv = NULL;
-		// cprintf("[%08x] env_destroy %08x\n", curenv ? curenv->env_id : 0, e->env_id);
+		////cprintf("[%08x] env_destroy %08x\n", curenv ? curenv->env_id : 0, e->env_id);
 		sched_yield();
 	}
 }
@@ -669,6 +752,7 @@ env_load_pgdir(struct Env *e)
 void
 env_run(struct Env *e)
 {
+
 	// Step 1: If this is a context switch (a new environment is running):
 	//	   1. Set the current environment (if any) back to
 	//	      ENV_RUNNABLE if it is ENV_RUNNING (think about
@@ -685,7 +769,6 @@ env_run(struct Env *e)
 	// Your code here
 	
 	struct Env *prevenv = curenv;
-
 	if (prevenv != NULL && prevenv->env_status == ENV_RUNNING) {
 		prevenv->env_status = ENV_RUNNABLE;
 		#ifdef SCHED_PRIORITIES
@@ -693,7 +776,9 @@ env_run(struct Env *e)
 		     tot_slice_switches+=1; 
 		}
 		#endif
-	}	
+	}
+	//cprintf("------->RUN ENV ID: %08x WITH PRIOR %d \n", e->env_id, e->env_priority);
+		
 	curenv = e;
 	
 	e->env_status = ENV_RUNNING;
@@ -702,8 +787,8 @@ env_run(struct Env *e)
 	    total_response_time+= count_sched_yields- e->start;
 	}
 	e->env_runs += 1;
+		
 	
-        count_sched_yields++;
         env_load_pgdir(e);
 
         // Needed if we run with multiple procesors
