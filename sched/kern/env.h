@@ -19,7 +19,6 @@
 #include <inc/env.h>
 #include <kern/cpu.h>
 
-
 extern unsigned int last_boost_yield;
 extern unsigned int count_sched_yields;
 extern unsigned int count_total_runs;
@@ -29,8 +28,6 @@ extern unsigned int max_turnaround;
 extern unsigned int total_response_time;
 extern unsigned int max_response_time;
 extern int tot_slice_switches;
-
-// extern struct EnvFinished * finished_envs;           // All environments
 
 #ifdef SCHED_PRIORITIES
 struct PriorityInfo {
@@ -44,8 +41,6 @@ extern struct PriorityInfo priorities[MIN_PRIORITY];  // All priorities
 void lower_priority_of(struct Env *env, int priority);
 void update_priority_fork(struct Env *forked, struct Env *original);
 
-// void remove_from_priority(struct Env *env, struct Env *prev);
-// void add_to_priority(struct Env *env, int ind);
 void snapshot();
 
 struct Env *search_runnable_on_p(int indPriority, struct Env **prev);
@@ -55,7 +50,6 @@ struct Env *search_prev_for_p(struct Env *target);
 
 void check_boost_all();
 
-// struct Env* update_priority(struct Env * target, int new_priority);
 #endif
 
 
