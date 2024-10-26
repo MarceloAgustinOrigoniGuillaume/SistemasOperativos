@@ -11,10 +11,10 @@
 #define RUNS_UNTIL_LOWER 5
 #define LOWER_ON_INTERRUPT 3
 
-#define PRIO_IND(env) env->env_priority-MAX_PRIORITY
+#define PRIO_IND(env) env->env_priority - MAX_PRIORITY
 
 #endif
-#define GET_ID(env) env? env->env_id : -1
+#define GET_ID(env) env ? env->env_id : -1
 
 #include <inc/env.h>
 #include <kern/cpu.h>
@@ -28,32 +28,32 @@ extern unsigned int total_turnaround;
 extern unsigned int total_response_time;
 extern int tot_slice_switches;
 
-//extern struct EnvFinished * finished_envs;           // All environments
+// extern struct EnvFinished * finished_envs;           // All environments
 
 #ifdef SCHED_PRIORITIES
-struct PriorityInfo{
-      struct Env* first;
-      struct Env* last;
+struct PriorityInfo {
+	struct Env *first;
+	struct Env *last;
 };
 
-extern struct PriorityInfo priorities[MIN_PRIORITY]; // All priorities
+extern struct PriorityInfo priorities[MIN_PRIORITY];  // All priorities
 
 // Funciones para prioridad!!
 void lower_priority_of(struct Env *env, int priority);
 void update_priority_fork(struct Env *forked, struct Env *original);
 
-//void remove_from_priority(struct Env *env, struct Env *prev);
-//void add_to_priority(struct Env *env, int ind);
+// void remove_from_priority(struct Env *env, struct Env *prev);
+// void add_to_priority(struct Env *env, int ind);
 void snapshot();
 
-struct Env* search_runnable_on_p(int indPriority, struct Env ** prev);
-struct Env* search_runnable_on(struct Env * first, struct Env ** prev);
-struct Env* search_prev_on_p(struct Env * first, struct Env * target);
-struct Env* search_prev_for_p(struct Env * target);
+struct Env *search_runnable_on_p(int indPriority, struct Env **prev);
+struct Env *search_runnable_on(struct Env *first, struct Env **prev);
+struct Env *search_prev_on_p(struct Env *first, struct Env *target);
+struct Env *search_prev_for_p(struct Env *target);
 
 void check_boost_all();
 
-//struct Env* update_priority(struct Env * target, int new_priority);
+// struct Env* update_priority(struct Env * target, int new_priority);
 #endif
 
 
@@ -71,11 +71,12 @@ void env_destroy(struct Env *e);  // Does not return if e == curenv
 
 int envid2env(envid_t envid, struct Env **env_store, bool checkperm);
 // The following functions do not return
-// En priorities en teoria deberia llamarse a la que le da el prev. Pero se puede delegar llamando 
-// a la de un parametro
+// En priorities en teoria deberia llamarse a la que le da el prev. Pero se
+// puede delegar llamando a la de un parametro
 #ifdef SCHED_PRIORITIES
 void env_run(struct Env *e) __attribute__((noreturn));
-void env_run_p(struct Env *e, struct Env *prev_on_priority) __attribute__((noreturn));
+void env_run_p(struct Env *e, struct Env *prev_on_priority)
+        __attribute__((noreturn));
 #endif
 
 #ifdef SCHED_ROUND_ROBIN
@@ -83,8 +84,6 @@ void env_run(struct Env *e) __attribute__((noreturn));
 #endif
 
 void context_switch(struct Trapframe *tf) __attribute__((noreturn));
-
-
 
 
 // Without this extra macro, we couldn't pass macros like TEST to

@@ -153,17 +153,17 @@ sys_exofork(void)
 	newenv->env_tf = curenv->env_tf;
 	newenv->env_tf.tf_regs.reg_eax = 0;
 
-	// Create a new event with the same priority as the current one
-	#ifdef SCHED_PRIORITIES
-	//cprintf("%d---CREATE/FORK ADD OF %08x parent: %08x\n",count_sched_yields, newenv->env_id, curenv->env_id);
+// Create a new event with the same priority as the current one
+#ifdef SCHED_PRIORITIES
+	// cprintf("%d---CREATE/FORK ADD OF %08x parent: %08x\n",count_sched_yields, newenv->env_id, curenv->env_id);
 	update_priority_fork(newenv, curenv);
-	//snapshot();
-	#endif
-	
-	#ifdef SCHED_ROUND_ROBIN
+// snapshot();
+#endif
+
+#ifdef SCHED_ROUND_ROBIN
 	newenv->env_priority = curenv->env_priority;
-	#endif
-	
+#endif
+
 
 	return newenv->env_id;
 	// panic("sys_exofork not implemented");
@@ -465,8 +465,8 @@ sys_ipc_recv(void *dstva)
 // }
 
 static int
-sys_get_priority(envid_t envid, void *va) {
-
+sys_get_priority(envid_t envid, void *va)
+{
 	struct Env *env;
 	int r;
 	if ((r = envid2env(envid, &env, 1)))
@@ -478,8 +478,8 @@ sys_get_priority(envid_t envid, void *va) {
 
 
 static int
-sys_lower_priority(envid_t envid, int priority) {
-
+sys_lower_priority(envid_t envid, int priority)
+{
 	if (priority <= 0 || priority > MIN_PRIORITY) {
 		return -E_INVAL;
 	}
@@ -491,14 +491,14 @@ sys_lower_priority(envid_t envid, int priority) {
 	if (env->env_priority > priority) {
 		return -E_INVAL;
 	}
-	#ifdef SCHED_PRIORITIES
-	     lower_priority_of(curenv,  priority);
-	#endif
-	
-	#ifdef SCHED_ROUND_ROBIN
-	     env->env_priority = priority;
-	#endif
-	
+#ifdef SCHED_PRIORITIES
+	lower_priority_of(curenv, priority);
+#endif
+
+#ifdef SCHED_ROUND_ROBIN
+	env->env_priority = priority;
+#endif
+
 	return 0;
 }
 

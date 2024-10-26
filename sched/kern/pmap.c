@@ -163,7 +163,7 @@ mem_init(void)
 	uint32_t envs_size = NENV * sizeof(struct Env);
 	envs = (struct Env *) boot_alloc(envs_size);
 	memset(envs, 0, envs_size);
-	
+
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
 	// up the list of free physical pages. Once we've done so, all further

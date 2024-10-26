@@ -67,14 +67,14 @@ i386_init(void)
 	if (TESTED(user_yield) || TESTED(user_spin0))
 		ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
-	// Touch all you want.
-	#ifdef SCHED_SYS_PRIORITIES	
+// Touch all you want.
+#ifdef SCHED_SYS_PRIORITIES
 	ENV_CREATE(user_lowerpriority, ENV_TYPE_USER);
 	ENV_CREATE(user_addpriority, ENV_TYPE_USER);
 	ENV_CREATE(user_priorityOFR, ENV_TYPE_USER);
 	ENV_CREATE(user_cpuintensive, ENV_TYPE_USER);
-	#else
-	
+#else
+
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
@@ -82,18 +82,18 @@ i386_init(void)
 	ENV_CREATE(user_forktree, ENV_TYPE_USER);
 	ENV_CREATE(user_forktree, ENV_TYPE_USER);
 	ENV_CREATE(user_hello, ENV_TYPE_USER);
-	ENV_CREATE(user_pingpong, ENV_TYPE_USER);	
-	ENV_CREATE(user_pingpong, ENV_TYPE_USER);	
+	ENV_CREATE(user_pingpong, ENV_TYPE_USER);
+	ENV_CREATE(user_pingpong, ENV_TYPE_USER);
 	ENV_CREATE(user_forktree, ENV_TYPE_USER);
 	ENV_CREATE(user_forktree, ENV_TYPE_USER);
 	ENV_CREATE(user_stresssched, ENV_TYPE_USER);
 	ENV_CREATE(user_stresssched, ENV_TYPE_USER);
-	ENV_CREATE(user_stresssched, ENV_TYPE_USER);	
-	
-	#endif
+	ENV_CREATE(user_stresssched, ENV_TYPE_USER);
+
+#endif
 
 #endif  // TEST*
-	// Schedule and run the first user environment!
+        // Schedule and run the first user environment!
 	sched_yield();
 }
 

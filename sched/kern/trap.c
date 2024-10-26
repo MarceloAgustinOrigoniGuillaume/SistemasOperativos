@@ -226,16 +226,18 @@ trap_dispatch(struct Trapframe *tf)
 	// interrupt using lapic_eoi() before calling the scheduler!
 	switch (tf->tf_trapno - IRQ_OFFSET) {
 	case IRQ_TIMER:
-		lapic_eoi();	
-		
-		#ifdef SCHED_PRIORITIES
-		if(curenv && tot_slice_switches == 1){
-		     //cprintf("-----------> RUNNED ONLY ONE ENV ON SLICE? %d\n",tot_slice_switches);
-		     lower_priority_of(curenv, curenv->env_priority + LOWER_ON_INTERRUPT); // 
+		lapic_eoi();
+
+#ifdef SCHED_PRIORITIES
+		if (curenv && tot_slice_switches == 1) {
+			// cprintf("-----------> RUNNED ONLY ONE ENV ON SLICE? %d\n",tot_slice_switches);
+			lower_priority_of(curenv,
+			                  curenv->env_priority +
+			                          LOWER_ON_INTERRUPT);  //
 		}
-		tot_slice_switches=0; 
-		#endif
-		
+		tot_slice_switches = 0;
+#endif
+
 		sched_yield();
 		return;
 	}
