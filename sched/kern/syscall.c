@@ -488,7 +488,7 @@ sys_lower_priority(envid_t envid, int priority) {
 	if ((r = envid2env(envid, &env, 1)))
 		return r;
 
-	if (env->env_priority < priority) {
+	if (env->env_priority > priority) {
 		return -E_INVAL;
 	}
 	#ifdef SCHED_PRIORITIES
