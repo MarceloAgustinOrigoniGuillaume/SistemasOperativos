@@ -206,7 +206,7 @@ search_prev_for_p(struct Env *target)
 
 #ifdef SCHED_DEBUG
 static void
-separ()
+end_snapshot()
 {  // Para GDB
 	cprintf("---ENDSNAP\n");
 }
@@ -215,15 +215,15 @@ void
 snapshot()
 {
 	for (int i = 0; i < MIN_PRIORITY; i++) {
-		cprintf("++PRIORITY QUEUE %02d: ", i);
+		cprintf("++PRIORITY QUEUE %02d:", i);
 		struct Env *curr = priorities[i].first;
 		if (!curr) {
-			cprintf("IS EMPTY!\n", i);
+			cprintf(" IS EMPTY!\n", i);
 			continue;
 		}
 		int count = 0;
 		while (curr) {
-			cprintf("%d::%08x-%d?",
+			cprintf(" %d::%08x-%d?",
 			        count,
 			        curr->env_id,
 			        curr->env_status == ENV_RUNNABLE ? 1 : 0);
@@ -231,15 +231,11 @@ snapshot()
 
 			count++;
 		}
-#ifdef SCHED_DEBUG
-		cprintf("\n++PRIORITY QUEUE %02d LAST WAS: %08x\n",
+		cprintf("\n++PRIORITY QUEUE %02d HAD %d LAST: %08x\n", i,
 		        count,
 		        GET_ID(priorities[i].last));
-#else
-		cprintf("\n");
-#endif
 	}
-	separ();
+	end_snapshot();
 }
 #endif
 

@@ -68,12 +68,15 @@ Se tiene una instacia de PriorityInfo para cada prioridad.
 A la hora de setear la prioridad en el env. Ademas de setearla como lo haria Round Robin. Actualiza la lista enlazada y el struct de la prioridad. Esto se puede observar en la funcion `add_to_priority`.
 
 
-#### Seleccion del proceso a ejecutar
+#### Seleccion del proceso a ejecutar y actualizacion
 ![alt_text](informe_imagenes/priority_methods.png "priority methods")
 
 Para la seleccion del proceso a ejecutar se tienen 2 métodos principales para búsqueda.
 El `search_runnable_on` que itera la lista hasta encontrar algún runnable. 
 Si no se pasa un primer env. Se agarra el primero de la `PriorityInfo`
+
+El sched_yield primero busca en la misma prioridad, tomando el curenv->priority_next como la primer opcion.
+Si este no encuentra ningun runnable. No busca circularmente. En cambio busca en las prioridades desde la mas alta a la mas baja. Iterando hasta encontrar alguno runnable.
 
 Y `search_prev_on_p` que a partir de un env target, itera la `PriorityInfo` asociada hasta encontrarlo.
 Que existe para mantener la compatibilidad con las invocaciones a `env_run` de `trap.c`.
@@ -97,4 +100,33 @@ Configurable por la constante BOOST_TIMESLICE, la cantidad de sched_yields antes
 
 
 
-Para debugear 
+#### Prints y ayudas para visualizar el funcionamiento.
+Se definieron en base dos flags. SCHED_VERB, SCHED_DEBUG
+Niveles para que muestre mas informacion del funcionamiento.
+
+SCHED_VERB muestra informacion sobre cuando se cambian las prioridades, a quien y a cual.
+
+SCHED_DEBUG, esta pensado para usar con gdb. Agrega mas info sobre los estados de la listas de las prioridades.
+Para ser especifico usa principalmente la funcion snapshot que muestra el estado de las queues. Teniendo la funcion end_snapshot como posible breakpoint para poder observar tras cambios en las prioridades como cambio. Presionando c para ver mas fluidamente.
+
+El formato de cada proceso en la prioridad es <indice en la lista>::<env_id>-<1 si es runnable 0 si no>?
+
+Ademas el SCHED_DEBUG agrega informacion de quien se esta corriendo. 
+
+
+Por ultimo existe la flag SCHED_SYS_PRIORITIES, que sirve para que el init.c corra los 
+user_programs que usan las syscalls de prioridades: lowerpriority, addpriority, priorityOFR  y cpuintensive
+
+Sino se corre en general un esquema de environments que sirve para mostrar la funcionalidad con una cantidad de envs no tan grande.
+
+Se modifico el makefile del GNU para poder usar estas 3 flags desde el make.
+
+USE_SYSC=1 activa SCHED_SYS_PRIORITIES, DBG=1 activa SCHED_DEBUG y VERB=1 activa el SCHED_VERB
+
+Ejemplo:
+make qemu-nox-gdb USE_PR=1 USE_SYSC=1 DBG=1 
+
+corre para gdb, usando la version de prioridades y los envs para probar la funcionalidad de estos. Ademas mostrando los snapshots tras cada cambio.
+
+Si se corre make gdb en otra terminal y 'b end_snapshot', se podra ir viendo cada snapshot iterativamente con inicialmente 'c' y luego enter.
+
