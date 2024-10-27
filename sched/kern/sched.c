@@ -88,18 +88,18 @@ sched_yield(void)
 			prev = curenv;
 		}
 
+	     	while (next == NULL && nextPriority < curenv->env_priority) {
+         		next = search_runnable_on_p(nextPriority, &prev);
+		        nextPriority++;
+		}
+		
 		nextPriority = curenv->env_priority +
 		               1;  // Proba si no hay next.. la siguiente.
 		while (next == NULL && nextPriority < MIN_PRIORITY) {
 			next = search_runnable_on_p(nextPriority, &prev);
 			nextPriority++;
 		}
-
-		nextPriority = 0;
-	     	while (next == NULL && nextPriority <= curenv->env_priority) {
-         		next = search_runnable_on_p(nextPriority, &prev);
-		        nextPriority++;
-		}		
+		
 	} else{
 	     	while (next == NULL && nextPriority < MIN_PRIORITY) {
          		next = search_runnable_on_p(nextPriority, &prev);

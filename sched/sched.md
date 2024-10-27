@@ -76,8 +76,7 @@ El `search_runnable_on` que itera la lista hasta encontrar algún runnable.
 Si no se pasa un primer env. Se agarra el primero de la `PriorityInfo`
 
 El sched_yield primero busca en la misma prioridad, tomando el curenv->priority_next como la primer opcion.
-Si este no encuentra ningun runnable. No busca circularmente. En cambio busca en las prioridades primero yendo por las siguientes, mas bajas y despues circularmente con la mas alta, esto sacrifica response time, pero mejora el turnaround. Iterando hasta encontrar alguno runnable. En caso de no haber un curenv, directamente itera desde la prioridad mas alta.
-
+Si este no encuentra ningun runnable. No busca circularmente. En cambio busca en las prioridades desde la mas alta a la mas baja. Iterando hasta encontrar alguno runnable.
 
 Y `search_prev_on_p` que a partir de un env target, itera la `PriorityInfo` asociada hasta encontrarlo.
 Que existe para mantener la compatibilidad con las invocaciones a `env_run` de `trap.c`.
@@ -130,4 +129,38 @@ make qemu-nox-gdb USE_PR=1 USE_SYSC=1 DBG=1
 corre para gdb, usando la version de prioridades y los envs para probar la funcionalidad de estos. Ademas mostrando los snapshots tras cada cambio.
 
 Si se corre make gdb en otra terminal y 'b end_snapshot', se podra ir viendo cada snapshot iterativamente con inicialmente 'c' y luego enter.
+
+
+
+
+### Comparacion de estadisticas generales
+Para el make qemu-nox, usando Round Robin. Se obtuvo
+
+cantidad de llamados al sched 1354
+cantidad timeslices idle 0
+cantidad de total de runs 6932
+cantidad procesos terminados 146
+turnaround promedio 2364
+turnaround maximo  5680
+response time promedio 1242
+response_time maximo 4255
+
+Y con el de prioridades:
+cantidad de llamados al sched 2062
+cantidad timeslices idle 0
+cantidad de total de runs 7640
+cantidad procesos terminados 146
+turnaround promedio 2684
+turnaround maximo  7294
+response time promedio 800
+response_time maximo 1908
+
+
+Se observa un claro trade off el Round Robin sacrifica el response time y tiene un turnaround maximo mas chico. Ademas se noto consistentemente una menor cantidad de runs.
+
+Por otro lado, al si no encontrar en la prioridad, haciendo Round Robin, buscar en las prioridades mas altas. Se observa que mejora claramente el response_time. Pero se observa un incremento en el turnaround y runs en general.
+
+
+
+
 
