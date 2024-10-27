@@ -96,11 +96,15 @@ sched_yield(void)
 		}
 
 		nextPriority = 0;
-	}
-
-	while (next == NULL && nextPriority < MIN_PRIORITY) {
-		next = search_runnable_on_p(nextPriority, &prev);
-		nextPriority++;
+	     	while (next == NULL && nextPriority <= curenv->env_priority) {
+         		next = search_runnable_on_p(nextPriority, &prev);
+		        nextPriority++;
+		}		
+	} else{
+	     	while (next == NULL && nextPriority < MIN_PRIORITY) {
+         		next = search_runnable_on_p(nextPriority, &prev);
+		        nextPriority++;
+		}
 	}
 
 	if (next != NULL) {

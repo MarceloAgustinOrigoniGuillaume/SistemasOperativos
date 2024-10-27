@@ -76,7 +76,8 @@ El `search_runnable_on` que itera la lista hasta encontrar algún runnable.
 Si no se pasa un primer env. Se agarra el primero de la `PriorityInfo`
 
 El sched_yield primero busca en la misma prioridad, tomando el curenv->priority_next como la primer opcion.
-Si este no encuentra ningun runnable. No busca circularmente. En cambio busca en las prioridades desde la mas alta a la mas baja. Iterando hasta encontrar alguno runnable.
+Si este no encuentra ningun runnable. No busca circularmente. En cambio busca en las prioridades primero yendo por las siguientes, mas bajas y despues circularmente con la mas alta, esto sacrifica response time, pero mejora el turnaround. Iterando hasta encontrar alguno runnable. En caso de no haber un curenv, directamente itera desde la prioridad mas alta.
+
 
 Y `search_prev_on_p` que a partir de un env target, itera la `PriorityInfo` asociada hasta encontrarlo.
 Que existe para mantener la compatibilidad con las invocaciones a `env_run` de `trap.c`.
