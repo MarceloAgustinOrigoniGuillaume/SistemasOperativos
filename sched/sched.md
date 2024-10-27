@@ -2,7 +2,7 @@
 
 ## Context switch
 
-![alt_text](informe_imagenes/context_switch_code.png "code")
+![alt_text](informe_imagenes/context_switch_code_new.png "code")
 
 Estado inicial del stack, antes de mover el trapframe al %esp.
 
@@ -40,18 +40,15 @@ Ejecuto la siguiente instrucción  `-> pop %esp` para mover al stack pointer el 
 
 ![alt_text](informe_imagenes/context_switch_registers_after_iret.png "after_iret")
 
-
-
-
 ## Scheduler con Prioridades
 
 #### Prioridades
 
 El scheduler de prioridades plantea las prioridades como un numero en el struct env, denotado `env_priority`, acotado en el rango `MAX_PRIORITY` a `MIN_PRIORITY`. Un mayor `env_priority` representa menor prioridad.
-Estos valores son customizables, constantes definidas en env.h, actualmente la `MAX_PRIORITY` es `1` y la `MIN_PRIORITY` es `10`. 
+Estos valores son customizables, constantes definidas en env.h, actualmente la `MAX_PRIORITY` es `1` y la `MIN_PRIORITY` es `10`.
 
-Al momento de crearse un nuevo env la función `env_create` se asigna la prioridad máxima. 
-No se hace en `env_alloc` ya que la política para el fork es que el proceso nuevo va a tener la misma prioridad inicial que el padre. 
+Al momento de crearse un nuevo env la función `env_create` se asigna la prioridad máxima.
+No se hace en `env_alloc` ya que la política para el fork es que el proceso nuevo va a tener la misma prioridad inicial que el padre.
 
 La prioridad existe tanto en Round Robin como para la version de prioridades. Pero Round Robin no la toma en cuenta aunque sí soporta las syscalls para el manejo de prioridades.
 
@@ -63,19 +60,19 @@ La implementación funciona con listas enlazadas que están sobre el arreglo env
 
 ![alt_text](informe_imagenes/priority_info.png "struct PriorityInfo")
 
-Se tiene una instacia de PriorityInfo para cada prioridad. 
+Se tiene una instacia de PriorityInfo para cada prioridad.
 
 A la hora de setear la prioridad en el env. Ademas de setearla como lo haria Round Robin. Actualiza la lista enlazada y el struct de la prioridad. Esto se puede observar en la funcion `add_to_priority`.
 
-
 #### Seleccion del proceso a ejecutar y actualizacion
+
 ![alt_text](informe_imagenes/priority_methods.png "priority methods")
 
 Para la seleccion del proceso a ejecutar se tienen 2 métodos principales para búsqueda.
-El `search_runnable_on` que itera la lista hasta encontrar algún runnable. 
+El `search_runnable_on` que itera la lista hasta encontrar algún runnable.
 Si no se pasa un primer env. Se agarra el primero de la `PriorityInfo`
 
-El sched_yield primero busca en la misma prioridad, tomando el curenv->priority_next como la primer opcion.
+El sched_yield primero busca en la misma prioridad, tomando el `curenv->priority_next` como la primer opcion.
 Si este no encuentra ningun runnable. No busca circularmente. En cambio busca en las prioridades desde la mas alta a la mas baja. Iterando hasta encontrar alguno runnable.
 
 Y `search_prev_on_p` que a partir de un env target, itera la `PriorityInfo` asociada hasta encontrarlo.
@@ -87,7 +84,6 @@ El metodo `remove_from_priority` toma al env a remover y el anterior. Y actualiz
 
 Actualizando el `PriorityInfo` de ser necesario.
 
-
 Teniendo estos dos metodos `add_to_priority` y `remove_from_priority`. Se tiene el metodo encapsulador `lower_priority_of` que además válida la prioridad esté en el rango permitido.
 
 Este método `lower_priority_of` es llamado en `env_run`, cada una cierta cantidad fija de runs. Denotada por la constante `RUNS_UNTIL_LOWER` del `env.h`.
@@ -95,72 +91,63 @@ Este método `lower_priority_of` es llamado en `env_run`, cada una cierta cantid
 Y además también es llamada por el `trap.c` al encontrar un timer interrupt y que el único proceso ejecutado sea el actual.
 La cantidad disminuída es configurable por la constante `LOWER_ON_INTERRUPT` en `env.h`
 
-Por último se tiene un sistema de boosting. Donde simplemente en cada `sched_yield` suma a un contandor y cuando pasan cierta cantidad de yields devuelve a todos los procesos vivos a la máxima prioridad. 
-Configurable por la constante BOOST_TIMESLICE, la cantidad de sched_yields antes de un boost.
-
-
+Por último se tiene un sistema de boosting. Donde simplemente en cada `sched_yield` suma a un contandor y cuando pasan cierta cantidad de yields devuelve a todos los procesos vivos a la máxima prioridad.
+Configurable por la constante `BOOST_TIMESLICE`, la cantidad de sched_yields antes de un boost.
 
 #### Prints y ayudas para visualizar el funcionamiento.
-Se definieron en base dos flags. SCHED_VERB, SCHED_DEBUG
-Niveles para que muestre mas informacion del funcionamiento.
 
-SCHED_VERB muestra informacion sobre cuando se cambian las prioridades, a quien y a cual.
+Se definieron en base dos flags, `SCHED_VERB ` y `SCHED_DEBUG` para mostrar más información del funcionamiento del scheduler.
 
-SCHED_DEBUG, esta pensado para usar con gdb. Agrega mas info sobre los estados de la listas de las prioridades.
-Para ser especifico usa principalmente la funcion snapshot que muestra el estado de las queues. Teniendo la funcion end_snapshot como posible breakpoint para poder observar tras cambios en las prioridades como cambio. Presionando c para ver mas fluidamente.
+`SCHED_VERB` muestra información sobre cuando se cambian las prioridades, a quien y a cual.
 
-El formato de cada proceso en la prioridad es <indice en la lista>::<env_id>-<1 si es runnable 0 si no>?
+`SCHED_DEBUG`, esta pensado para usar con gdb. Agrega mas info sobre los estados de la listas de las prioridades.
+Para ser más específico, utiliza principalmente la funcion snapshot para mostrar el estado de las queues. Teniendo la funcion end_snapshot como posible breakpoint para poder observar los cambios en las prioridades cuando se dan dichos cambios.
 
-Ademas el SCHED_DEBUG agrega informacion de quien se esta corriendo. 
+El formato de cada proceso en la prioridad es \<indice en la lista>::<env_id>-<1 si es runnable 0 si no>?
 
+Ademas el `SCHED_DEBUG` agrega informacion de que proceso se está corriendo.
 
-Por ultimo existe la flag SCHED_SYS_PRIORITIES, que sirve para que el init.c corra los 
-user_programs que usan las syscalls de prioridades: lowerpriority, addpriority, priorityOFR  y cpuintensive
+Por ultimo existe la flag `SCHED_SYS_PRIORITIES`, que sirve para que el init.c corra los
+user_programs que usan las syscalls de prioridades: `lowerpriority`, `addpriority`, `priorityOFR`  y `cpuintensive`.
 
-Sino se corre en general un esquema de environments que sirve para mostrar la funcionalidad con una cantidad de envs no tan grande.
+En caso contrario se corre en general un esquema de environments que sirve para mostrar la funcionalidad con una cantidad de envs no tan grande.
 
 Se modifico el makefile del GNU para poder usar estas 3 flags desde el make.
 
-USE_SYSC=1 activa SCHED_SYS_PRIORITIES, DBG=1 activa SCHED_DEBUG y VERB=1 activa el SCHED_VERB
+`USE_SYSC=1` activa `SCHED_SYS_PRIORITIES`, `DBG=1` activa `SCHED_DEBUG` y `VERB=1` activa el `SCHED_VERB`
 
-Ejemplo:
-make qemu-nox-gdb USE_PR=1 USE_SYSC=1 DBG=1 
+###### Ejemplo:
+
+`make qemu-nox-gdb USE_PR=1 USE_SYSC=1 DBG=1`
 
 corre para gdb, usando la version de prioridades y los envs para probar la funcionalidad de estos. Ademas mostrando los snapshots tras cada cambio.
 
-Si se corre make gdb en otra terminal y 'b end_snapshot', se podra ir viendo cada snapshot iterativamente con inicialmente 'c' y luego enter.
-
-
-
+Si se corre make gdb en otra terminal y 'b end_snapshot', se podra ir viendo cada snapshot iterativamente con 'c'.
 
 ### Comparacion de estadisticas generales
-Para el make qemu-nox, usando Round Robin. Se obtuvo
 
-cantidad de llamados al sched 1354
-cantidad timeslices idle 0
-cantidad de total de runs 6932
-cantidad procesos terminados 146
-turnaround promedio 2364
-turnaround maximo  5680
-response time promedio 1242
-response_time maximo 4255
+###### Para el make qemu-nox, usando Round Robin se obtuvo:
 
-Y con el de prioridades:
-cantidad de llamados al sched 2062
-cantidad timeslices idle 0
-cantidad de total de runs 7640
-cantidad procesos terminados 146
-turnaround promedio 2684
-turnaround maximo  7294
-response time promedio 800
-response_time maximo 1908
+- cantidad de llamados al sched: 1354
+- cantidad timeslices idle: 0
+- cantidad total de runs: 6932
+- cantidad de procesos terminados: 146
+- turnaround promedio: 2364
+- turnaround máximo: 5680
+- response_time promedio: 1242
+- response_time máximo: 4255
 
+###### Y con el de prioridades:
+
+- cantidad de llamados al sched: 2062
+- cantidad de timeslices idle: 0
+- cantidad total de runs: 7640
+- cantidad de procesos terminados: 146
+- turnaround promedio: 2684
+- turnaround máximo: 7294
+- response_time promedio: 800
+- response_time máximo: 1908
 
 Se observa un claro trade off el Round Robin sacrifica el response time y tiene un turnaround maximo mas chico. Ademas se noto consistentemente una menor cantidad de runs.
 
 Por otro lado, al si no encontrar en la prioridad, haciendo Round Robin, buscar en las prioridades mas altas. Se observa que mejora claramente el response_time. Pero se observa un incremento en el turnaround y runs en general.
-
-
-
-
-
