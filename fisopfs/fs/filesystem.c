@@ -5,11 +5,6 @@
 #include "./blocks.h"
 #include "./directories.h"
 #include "./inodes.h"
-#include <string.h>
-
-#include <stdio.h>
-
-#include <errno.h>
 
 #include <fuse.h>
 #include <stdio.h>
@@ -22,7 +17,6 @@
 #include <errno.h>
 
 int getattrs(const char *path, struct stat *st){
-     /*
 	printf("[debug] fisopfs_getattr - path: %s\n", path);
 
 	if (strcmp(path, "/") == 0) {
@@ -39,8 +33,7 @@ int getattrs(const char *path, struct stat *st){
 	}
 
 	return 0;
-     */
-     
+     /*
      struct Inode* res = searchRelative(path);
      
      if(res == NULL){
@@ -49,6 +42,8 @@ int getattrs(const char *path, struct stat *st){
      
      statOf(res, st);
      return 0;
+     
+     */
 }
 
 int readdir(const char *path,
@@ -58,6 +53,14 @@ int readdir(const char *path,
                 struct fuse_file_info *fi){
 	
        printf("[debug] fisopfs_readdir - path: %s\n", path);
+       // Si nos preguntan por el directorio raiz, solo tenemos un archivo
+       if (strcmp(path, "/") == 0) {
+             // Los directorios '.' y '..'
+             filler(buffer, ".", NULL, 0);
+             filler(buffer, "..", NULL, 0);
+	    filler(buffer, "fisop", NULL, 0);
+	    return 0;
+       }
        
        struct Inode* res = searchRelative(path);
        
@@ -69,11 +72,6 @@ int readdir(const char *path,
        filler(buffer, ".", NULL, 0);
        filler(buffer, "..", NULL, 0);
 
-       // Si nos preguntan por el directorio raiz, solo tenemos un archivo
-       if (strcmp(path, "/") == 0) {
-	    filler(buffer, "fisop", NULL, 0);
-	    return 0;
-       }
        struct DirEntries children;
        
        readChildren(res, &children);

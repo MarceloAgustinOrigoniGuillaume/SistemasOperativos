@@ -21,7 +21,7 @@ all: build
 o_src_files = $(patsubst %.$(extension),%.o,$(src_files))
 
 build: $(o_src_files)
-	$(COMPILER) $(o_src_files) $(FS_NAME).c -o $(FS_NAME) $(COMPILERFLAGS)
+	$(COMPILER) $(o_src_files) $(FS_NAME).c -o $(FS_NAME) $(COMPILERFLAGS) $(LDLIBS)
 %.o: %.$(extension)
 	$(COMPILER) $(COMPILERFLAGS) -o $@ -c $<
 	echo
