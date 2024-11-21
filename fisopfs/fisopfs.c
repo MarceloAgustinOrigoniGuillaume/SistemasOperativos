@@ -11,7 +11,7 @@
 #include <errno.h>
 
 
-#include "./filesystem.h"
+#include "fs/filesystem.h"
 #define DEFAULT_FILE_DISK "persistence_file.fisopfs"
 
 char *filedisk = DEFAULT_FILE_DISK;

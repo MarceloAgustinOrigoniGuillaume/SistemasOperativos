@@ -9,7 +9,7 @@ COMPILERFLAGS = $(CFLAGS)
 
 extension = c
 
-src_files ?= $(wildcard ./*.$(extension))
+src_files ?= $(wildcard ./fs/*.$(extension))
 
 # Flags for FUSE
 LDLIBS := $(shell pkg-config fuse --cflags --libs)
@@ -21,7 +21,7 @@ all: build
 o_src_files = $(patsubst %.$(extension),%.o,$(src_files))
 
 build: $(o_src_files)
-	$(COMPILER) $(o_src_files) -o $(FS_NAME) $(COMPILERFLAGS)
+	$(COMPILER) $(o_src_files) $(FS_NAME).c -o $(FS_NAME) $(COMPILERFLAGS)
 %.o: %.$(extension)
 	$(COMPILER) $(COMPILERFLAGS) -o $@ -c $<
 	echo
