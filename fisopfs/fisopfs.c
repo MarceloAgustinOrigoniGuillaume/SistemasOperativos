@@ -88,6 +88,7 @@ main(int argc, char *argv[])
 			break;
 		}
 	}
+	hardcodefs();
 
 	return fuse_main(argc, argv, &operations, NULL);
 }

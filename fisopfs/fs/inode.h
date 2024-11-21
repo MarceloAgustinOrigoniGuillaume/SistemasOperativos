@@ -14,7 +14,7 @@ enum InodeType{
 // Persona 2
 struct Inode{
     char * name;
-    enum InodeType tipo;
+    enum InodeType type;
     struct Data * data;
 };
 

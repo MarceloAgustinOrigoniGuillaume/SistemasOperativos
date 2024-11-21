@@ -8,6 +8,7 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 
+void hardcodefs();
 
 void serialize(int fd_out);    // Persona 1
 void deserialize(int fd_in);   // Persona 1

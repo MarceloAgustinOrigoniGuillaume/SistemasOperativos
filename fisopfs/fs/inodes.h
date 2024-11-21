@@ -9,6 +9,8 @@
 struct Inode inodes[INIT_INODES];
 struct Inode* free_inode;
 
+struct Inode root_inode;
+
 // Manejo de inodos
 struct Inode* createInode(struct Inode* parent, const char* path, enum InodeType tipo); // Persona 4
 void deleteInode(struct Inode* inode); // Persona 4

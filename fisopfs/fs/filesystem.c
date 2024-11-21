@@ -16,24 +16,16 @@
 #include <stdlib.h>
 #include <errno.h>
 
+void hardcodefs(){
+   struct Inode* inode = &inodes[0];
+   inode->name = "somefile";
+   inode->type = I_FILE;
+   inode->data = NULL;
+}
+
 int getattrs(const char *path, struct stat *st){
-	printf("[debug] fisopfs_getattr - path: %s\n", path);
-
-	if (strcmp(path, "/") == 0) {
-		st->st_uid = 1717;
-		st->st_mode = __S_IFDIR | 0755;
-		st->st_nlink = 2;
-	} else if (strcmp(path, "/fisop") == 0) {
-		st->st_uid = 1818;
-		st->st_mode = __S_IFREG | 0644;
-		st->st_size = 2048;
-		st->st_nlink = 1;
-	} else {
-		return -ENOENT;
-	}
-
-	return 0;
-     /*
+     printf("[debug] fisopfs_getattr - path: %s\n", path);
+     
      struct Inode* res = searchRelative(path);
      
      if(res == NULL){
@@ -42,8 +34,6 @@ int getattrs(const char *path, struct stat *st){
      
      statOf(res, st);
      return 0;
-     
-     */
 }
 
 int readdir(const char *path,
@@ -53,18 +43,18 @@ int readdir(const char *path,
                 struct fuse_file_info *fi){
 	
        printf("[debug] fisopfs_readdir - path: %s\n", path);
-       // Si nos preguntan por el directorio raiz, solo tenemos un archivo
-       if (strcmp(path, "/") == 0) {
-             // Los directorios '.' y '..'
-             filler(buffer, ".", NULL, 0);
-             filler(buffer, "..", NULL, 0);
-	    filler(buffer, "fisop", NULL, 0);
-	    return 0;
-       }
        
        struct Inode* res = searchRelative(path);
        
        if(res == NULL){
+           // Si nos preguntan por el directorio raiz, solo tenemos un archivo
+           if (strcmp(path, "/") == 0) {
+                 // Los directorios '.' y '..'
+                 filler(buffer, ".", NULL, 0);
+                 filler(buffer, "..", NULL, 0);
+	        filler(buffer, "fisop", NULL, 0);
+	        return 0;
+           }       
            return -ENOENT;
        }
 	
