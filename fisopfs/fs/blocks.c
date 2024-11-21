@@ -21,16 +21,23 @@ void freeBlock(struct Block * block){
 
 // Manejo de archivos
 
-void writeData(struct Inode* file, char* buff, int count){ // Persona 3
-    *buff = 0;
-    printf("WRITE usl: %s count: %d\n",file->name, count);
-}
-int readData(struct Inode* file, char* buff_out, int data_off, size_t count){ // Persona 3
-    *buff_out = 0;
-    printf("READ usl: %s off:%d count: %ld\n",file->name, data_off, count);
+int writeData(struct Inode* file, const char* buff,  int data_off, size_t count){ // Persona 3
+    printf("WRITE usl: %s off:%d count: %ld\n",file->name, data_off, count);
+    
+    const char itm = (*buff);
+    printf("first: %c\n", itm);
     return 0;
 }
-void freeFile(struct FileData* data){ // Persona 3
-    freeBlock(data->first_block);
+int readData(struct Inode* file, char* buff_out, int data_off, size_t count){ // Persona 3
+    printf("READ usl: %s off:%d count: %ld\n",file->name, data_off, count);
+    
+    const char itm = *buff_out;
+    printf("first: %c\n", itm);
+    return 0;
+}
+void freeFile(struct Inode* inode){ // Persona 3
+    printf("FREE file: %s\n",inode->name);
+    
+    //freeBlock((inode->data)->first_block);
 }
 

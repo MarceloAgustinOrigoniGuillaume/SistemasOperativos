@@ -26,8 +26,8 @@ void freeBlock(struct Block * block); // Persona 3
 
 // Manejo de archivos
 
-void writeData(struct Inode* file, char* buff, int count); // Persona 3
+int writeData(struct Inode* file, const char* buff,  int data_off, size_t count); // Persona 3
 int readData(struct Inode* file, char* buff_out, int data_off, size_t count); // Persona 3
-void freeFile(struct FileData* data); // Persona 3
+void freeFile(struct Inode* file); // Persona 3
 
 #endif

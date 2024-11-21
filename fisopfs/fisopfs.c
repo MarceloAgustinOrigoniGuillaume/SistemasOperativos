@@ -12,62 +12,18 @@
 
 
 #include "fs/filesystem.h"
-#define DEFAULT_FILE_DISK "persistence_file.fisopfs"
-
-char *filedisk = DEFAULT_FILE_DISK;
-
-static int
-fisopfs_getattr(const char *path, struct stat *st)
-{
-      return getattrs(path, st);
-}
-
-static int
-fisopfs_readdir(const char *path,
-                void *buffer,
-                fuse_fill_dir_t filler,
-                off_t offset,
-                struct fuse_file_info *fi)
-{
-       return readdir(path, buffer, filler, offset, fi);
-}
-
-//#define MAX_CONTENIDO 100
-//static char fisop_file_contenidos[MAX_CONTENIDO] = "hola fisopfs!\n";
-
-static int
-fisopfs_read(const char *path,
-             char *buffer,
-             size_t size,
-             off_t offset,
-             struct fuse_file_info *fi)
-{
-       return readfile(path, buffer,size, offset, fi);
-       /*
-	printf("[debug] fisopfs_read - path: %s, offset: %lu, size: %lu\n",
-	       path,
-	       offset,
-	       size);
-
-	// Solo tenemos un archivo hardcodeado!
-	if (strcmp(path, "/fisop") != 0)
-		return -ENOENT;
-
-	if (offset + size > strlen(fisop_file_contenidos))
-		size = strlen(fisop_file_contenidos) - offset;
-
-	size = size > 0 ? size : 0;
-
-	memcpy(buffer, fisop_file_contenidos + offset, size);
-
-	return size;
-	*/
-}
 
 static struct fuse_operations operations = {
-	.getattr = fisopfs_getattr,
-	.readdir = fisopfs_readdir,
-	.read = fisopfs_read,
+	.getattr = fs_getattrs,
+	.readdir = fs_readdir,
+	.read = fs_readfile,
+	.create= fs_touch,
+	.mkdir= fs_mkdir,
+	.rmdir= fs_rmdir,
+	.write = fs_write,
+	.init = fs_init,
+	.destroy = fs_destroy,
+	.unlink = fs_unlink,
 };
 
 int
@@ -88,7 +44,6 @@ main(int argc, char *argv[])
 			break;
 		}
 	}
-	hardcodefs();
 
 	return fuse_main(argc, argv, &operations, NULL);
 }

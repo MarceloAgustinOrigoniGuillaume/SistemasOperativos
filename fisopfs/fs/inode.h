@@ -13,6 +13,7 @@ enum InodeType{
 
 // Persona 2
 struct Inode{
+    inode_id_t id;
     char * name;
     enum InodeType type;
     struct Data * data;

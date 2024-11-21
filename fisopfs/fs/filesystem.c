@@ -1,6 +1,3 @@
-#ifndef FILESYSTEM_H
-#define FILESYSTEM_H
-
 #include "./filesystem.h"
 #include "./blocks.h"
 #include "./directories.h"
@@ -16,17 +13,35 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#define DEFAULT_FILE_DISK "persistence_file.fisopfs"
+char *filedisk = DEFAULT_FILE_DISK;
+
+//#define MAX_CONTENIDO 100
+//static char fisop_file_contenidos[MAX_CONTENIDO] = "hola fisopfs!\n";
+
+
 void hardcodefs(){
    struct Inode* inode = &inodes[0];
+   
+   inode->id = 0;
+   inode->name = "/";
+   inode->type = I_DIR;
+   inode->data = NULL;
+   
+   root_inode = inode;
+   
+   
+   inode = &inodes[1];
+   inode->id = 1;
    inode->name = "somefile";
    inode->type = I_FILE;
    inode->data = NULL;
 }
 
-int getattrs(const char *path, struct stat *st){
-     printf("[debug] fisopfs_getattr - path: %s\n", path);
+int fs_getattrs(const char *path, struct stat *st){
+     printf("[debug] fs_getattr - path: %s\n", path);
      
-     struct Inode* res = searchRelative(path);
+     struct Inode* res = searchRelative(root_inode, path);
      
      if(res == NULL){
          return -ENOENT;
@@ -36,15 +51,15 @@ int getattrs(const char *path, struct stat *st){
      return 0;
 }
 
-int readdir(const char *path,
+int fs_readdir(const char *path,
                 void *buffer,
                 fuse_fill_dir_t filler,
                 off_t offset,
                 struct fuse_file_info *fi){
 	
-       printf("[debug] fisopfs_readdir - path: %s\n", path);
+       printf("[debug] fs_readdir - path: %s\n", path);
        
-       struct Inode* res = searchRelative(path);
+       struct Inode* res = searchRelative(root_inode, path);
        
        if(res == NULL){
            // Si nos preguntan por el directorio raiz, solo tenemos un archivo
@@ -76,24 +91,26 @@ int readdir(const char *path,
 
 }
 
-int readfile(const char *path,
+int fs_readfile(const char *path,
              char *buffer,
              size_t size,
              off_t offset,
              struct fuse_file_info *fi){
 	
-	printf("[debug] fisopfs_read - path: %s, offset: %lu, size: %lu\n",
+	printf("[debug] fs_read - path: %s, offset: %lu, size: %lu\n",
 	       path,
 	       offset,
 	       size);
 	
-        struct Inode* res = searchRelative(path);
+        struct Inode* res = searchRelative(root_inode, path);
        
         if(res == NULL){
             return -ENOENT;
         }
         
-        return readData(res, buffer, offset, size);
+        readData(res, buffer, offset, size);
+        
+        return -ENOENT; 
 	/*
 	// Solo tenemos un archivo hardcodeado!
 	if (strcmp(path, "/fisop") != 0)
@@ -110,4 +127,103 @@ int readfile(const char *path,
         */        
 }
 
-#endif
+
+
+
+int fs_write(const char *path, const char *buf,
+		  size_t size, off_t off, struct fuse_file_info *fi){
+	printf("[debug] fisopfs write file %s s: %ld off: %li\n",
+	       path, size, off);
+        struct Inode* res = searchRelative(root_inode, path);
+        if(res == NULL){
+            return -ENOENT;
+        }
+        
+        writeData(res, buf, off, size);
+        
+        return -ENOENT;
+}
+
+
+int fs_touch(const char *path, mode_t mode,
+		   struct fuse_file_info *fi){
+	printf("[debug] fisopfs touch %s %d\n",
+	       path, mode);
+	
+	char * name_child = NULL;
+	struct Inode* parent= searchNew(root_inode, path, &name_child);
+	if(parent == NULL || name_child == NULL){
+	     return -ENOENT;
+	}
+	
+	struct Inode* child = createInode(name_child, I_FILE);
+	if(child == NULL){
+	     return -ENOENT;	     
+	}
+	addChild(parent, child);
+        return -ENOENT;	     
+}
+
+int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
+                 ){
+                 
+	printf("[debug] fisopfs mkdir %s %d\n",
+	       path, mode);
+	       
+	char * name_child = NULL;
+	struct Inode* parent= searchNew(root_inode, path, &name_child);
+	
+	if(parent == NULL || name_child == NULL){
+	     return -ENOENT;
+	}
+	
+	struct Inode* child = createInode(name_child, I_DIR);
+	
+	if(child == NULL){
+	     return -ENOENT;	     
+	}
+	
+	addChild(parent, child);
+        return -ENOENT;	     
+}
+
+int fs_rmdir(const char *path){
+	printf("[debug] fisopfs rmdir %s\n",
+	       path);
+	       
+	struct Inode* child = rmChild(root_inode, path);
+	if(child == NULL){
+            return -ENOENT;
+        }
+        
+        freeDir(child); // Libera la data del inodo.
+        deleteInode(child); // Libera el inodo en si.
+        return 0;
+}
+
+
+int fs_unlink(const char* path){
+	printf("[debug] fisopfs unlink %s\n",
+	       path);
+	       
+	struct Inode* child = rmChild(root_inode, path);
+	if(child == NULL){
+            return -ENOENT;
+        }
+        
+        freeFile(child); // Libera la data del inodo.
+        deleteInode(child); // Libera el inodo en si.
+        
+        return 0;
+}
+
+
+void* fs_init(struct fuse_conn_info *conn){
+	printf("[debug] fisopfs init from %s\n",filedisk);
+	hardcodefs();
+	return NULL;
+}
+
+void fs_destroy(){
+	printf("[debug] fisopfs serialize to %s!\n",filedisk);
+}

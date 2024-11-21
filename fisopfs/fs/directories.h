@@ -20,10 +20,28 @@ void serializeDirData(int fd_out, const struct DirData* data_out);    // Persona
 void deserializeDirData(int fd_in, struct DirData* data);   // Persona 2/1?
 
 // Manejo de directorios
-struct Inode* searchRelative(const char* path); // Persona 2
-void addChild(struct Inode* parent, struct Inode* child); // Persona 2
+
+// Para buscar desde cierto inodo directorio, puede servir si se da soporte
+// A opendir y cosas asi.
+struct Inode* searchRelative(const struct Inode* root, const char* path); // Persona 2
+
+// Busca el padre y retorna el nombre con el cual deberia crearse el nuevo hijo.
+// Si ya existe o no se permite. name_child == NULL
+struct Inode* searchNew(const struct Inode* root, const char* path, char ** name_child); // Persona 2
+
+
+// Para el ls, lista los hijos en el struct out.
 void readChildren(struct Inode* dir, struct DirEntries* out); // Persona 2
+
+
+// Libera al directorio, recursivamente
 void freeDir(struct Inode* dir); // Persona 2
 
+
+// Busca al inodo, y lo remueve del padre. Retorna el inodo hijo. Para su posterior liberacion de hacer falta.
+struct Inode* rmChild(struct Inode* root, const char* path); // Persona 2
+
+// Agrega el inodo hijo como hijo al padre.
+int addChild(struct Inode* parent, struct Inode* child); // Persona 2
 
 #endif
