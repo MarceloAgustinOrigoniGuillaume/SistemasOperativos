@@ -19,6 +19,14 @@ void freeBlock(struct Block * block){
     
 }
 
+static struct FileData def_file_data;
+
+int allocFile(struct Inode* file){ // Persona 3
+    printf("Alloc file: %s\n",file->name);
+    file->data = (struct Data *)&def_file_data;
+    return 0;
+}
+
 // Manejo de archivos
 
 int writeData(struct Inode* file, const char* buff,  int data_off, size_t count){ // Persona 3

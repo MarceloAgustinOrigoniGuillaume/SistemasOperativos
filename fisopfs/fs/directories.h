@@ -34,6 +34,8 @@ struct Inode* searchNew(const struct Inode* root, const char* path, char ** name
 void readChildren(struct Inode* dir, struct DirEntries* out); // Persona 2
 
 
+// Crea los datos del dir
+int allocDir(struct Inode* dir); // Persona 2
 // Libera al directorio, recursivamente
 void freeDir(struct Inode* dir); // Persona 2
 

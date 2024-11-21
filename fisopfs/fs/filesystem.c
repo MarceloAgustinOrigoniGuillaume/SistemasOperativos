@@ -160,6 +160,10 @@ int fs_touch(const char *path, mode_t mode,
 	if(child == NULL){
 	     return -ENOENT;	     
 	}
+	
+	allocFile(child); // Crea datos
+	
+	
 	addChild(parent, child);
         return -ENOENT;	     
 }
@@ -183,6 +187,7 @@ int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
 	     return -ENOENT;	     
 	}
 	
+	allocDir(child); // Crea directorio
 	addChild(parent, child);
         return -ENOENT;	     
 }

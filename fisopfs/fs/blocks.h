@@ -23,6 +23,7 @@ struct Block * first_free;
 struct Block * getAndUseFree();// Persona 3
 
 void freeBlock(struct Block * block); // Persona 3
+int allocFile(struct Inode* file); // Persona 3
 
 // Manejo de archivos
 
