@@ -47,5 +47,6 @@ docker-attach:
 
 clean:
 	rm -rf $(EXEC) *.o core vgcore.* $(FS_NAME)
+	rm -f $(o_src_files)
 
 .PHONY: all build clean format docker-build docker-run docker-attach
