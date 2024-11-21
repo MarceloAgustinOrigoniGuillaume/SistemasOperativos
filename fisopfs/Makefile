@@ -1,6 +1,12 @@
 CC = gcc
 CFLAGS := -ggdb3 -O2 -Wall -std=c11
 CFLAGS += -Wno-unused-function -Wvla
+COMPILER = $(CC)
+COMPILERFLAGS = $(CFLAGS)
+
+extension = c
+
+src_files ?= $(wildcard ./*.$(extension))
 
 # Flags for FUSE
 LDLIBS := $(shell pkg-config fuse --cflags --libs)
@@ -9,8 +15,15 @@ LDLIBS := $(shell pkg-config fuse --cflags --libs)
 FS_NAME := fisopfs
 
 all: build
-	
-build: $(FS_NAME)
+o_src_files = $(patsubst %.$(extension),%.o,$(src_files))
+
+build: $(o_src_files) $(FS_NAME)
+
+
+%.o: %.$(extension)
+	$(COMPILER) $(COMPILERFLAGS) -o $@ -c $<
+	echo
+	echo '-------------------' # visual marker to separate the output of each compilation (may or may not help)
 
 format: .clang-files .clang-format
 	xargs -r clang-format -i <$<

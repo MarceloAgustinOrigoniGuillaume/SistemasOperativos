@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
+
+#include "./filesystem.h"
 #define DEFAULT_FILE_DISK "persistence_file.fisopfs"
 
 char *filedisk = DEFAULT_FILE_DISK;
@@ -17,22 +19,7 @@ char *filedisk = DEFAULT_FILE_DISK;
 static int
 fisopfs_getattr(const char *path, struct stat *st)
 {
-	printf("[debug] fisopfs_getattr - path: %s\n", path);
-
-	if (strcmp(path, "/") == 0) {
-		st->st_uid = 1717;
-		st->st_mode = __S_IFDIR | 0755;
-		st->st_nlink = 2;
-	} else if (strcmp(path, "/fisop") == 0) {
-		st->st_uid = 1818;
-		st->st_mode = __S_IFREG | 0644;
-		st->st_size = 2048;
-		st->st_nlink = 1;
-	} else {
-		return -ENOENT;
-	}
-
-	return 0;
+      return getattrs(path, st);
 }
 
 static int
@@ -42,23 +29,11 @@ fisopfs_readdir(const char *path,
                 off_t offset,
                 struct fuse_file_info *fi)
 {
-	printf("[debug] fisopfs_readdir - path: %s\n", path);
-
-	// Los directorios '.' y '..'
-	filler(buffer, ".", NULL, 0);
-	filler(buffer, "..", NULL, 0);
-
-	// Si nos preguntan por el directorio raiz, solo tenemos un archivo
-	if (strcmp(path, "/") == 0) {
-		filler(buffer, "fisop", NULL, 0);
-		return 0;
-	}
-
-	return -ENOENT;
+       return readdir(path, buffer, filler, offset, fi);
 }
 
-#define MAX_CONTENIDO 100
-static char fisop_file_contenidos[MAX_CONTENIDO] = "hola fisopfs!\n";
+//#define MAX_CONTENIDO 100
+//static char fisop_file_contenidos[MAX_CONTENIDO] = "hola fisopfs!\n";
 
 static int
 fisopfs_read(const char *path,
@@ -67,6 +42,8 @@ fisopfs_read(const char *path,
              off_t offset,
              struct fuse_file_info *fi)
 {
+       return readfile(path, buffer,size, offset, fi);
+       /*
 	printf("[debug] fisopfs_read - path: %s, offset: %lu, size: %lu\n",
 	       path,
 	       offset,
@@ -84,6 +61,7 @@ fisopfs_read(const char *path,
 	memcpy(buffer, fisop_file_contenidos + offset, size);
 
 	return size;
+	*/
 }
 
 static struct fuse_operations operations = {

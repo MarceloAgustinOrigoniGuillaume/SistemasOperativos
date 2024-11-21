@@ -1,19 +1,22 @@
 #ifndef INODE_H
 #define INODE_H
 
-#include "./data.h"
+typedef int inode_id_t;
+struct Data {
+   int size;
+};
 
 enum InodeType: int{
-   FILE = 1,
-   DIR = 2
+   I_FILE = 1,
+   I_DIR = 2
 };
 
 // Persona 2
 struct Inode{
     char * name;
-    InodeType tipo;
-    Data * data;
-}
+    enum InodeType tipo;
+    struct Data * data;
+};
 
 
 
