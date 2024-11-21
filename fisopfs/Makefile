@@ -1,6 +1,9 @@
 CC = gcc
 CFLAGS := -ggdb3 -O2 -Wall -std=c11
 CFLAGS += -Wno-unused-function -Wvla
+
+# Necesario para pc de 64 bits?
+CFLAGS += -D_FILE_OFFSET_BITS=64 
 COMPILER = $(CC)
 COMPILERFLAGS = $(CFLAGS)
 
@@ -17,9 +20,8 @@ FS_NAME := fisopfs
 all: build
 o_src_files = $(patsubst %.$(extension),%.o,$(src_files))
 
-build: $(o_src_files) $(FS_NAME)
-
-
+build: $(o_src_files)
+	$(COMPILER) $(o_src_files) -o $(FS_NAME) $(COMPILERFLAGS)
 %.o: %.$(extension)
 	$(COMPILER) $(COMPILERFLAGS) -o $@ -c $<
 	echo

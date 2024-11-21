@@ -3,6 +3,7 @@
 
 #define BLOCK_SIZE 512
 struct Block {
+    int tempuseless;
     char data[BLOCK_SIZE];
 };
 

@@ -6,7 +6,7 @@ struct Data {
    int size;
 };
 
-enum InodeType: int{
+enum InodeType{
    I_FILE = 1,
    I_DIR = 2
 };
