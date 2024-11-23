@@ -14,7 +14,7 @@ void statOf(struct Inode* inode, struct stat *st){ // Persona 4
     } else if (strcmp(inode->name, "somefile") == 0) {
 	    st->st_uid = 2;
 	    st->st_mode = __S_IFREG | 0664;
-	    st->st_size = 13;
+	    st->st_size = inode->data->size;
 	    st->st_nlink = 1;
     }
 }

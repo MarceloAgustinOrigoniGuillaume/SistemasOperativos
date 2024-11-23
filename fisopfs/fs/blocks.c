@@ -91,7 +91,7 @@ int readData(struct Inode* file, char* buff_out, int data_off, size_t count){ //
         if(data_off + i >= data->size) {
             // Block full
             printf("Trying to read out of bounds\n");
-            return -1;
+            break;
         }
         read_bytes++;
         buff_out[i] = data->first_block->data[data_off + i];
@@ -99,6 +99,9 @@ int readData(struct Inode* file, char* buff_out, int data_off, size_t count){ //
 
     const char itm = *buff_out;
     printf("first: %c\n", itm);
+
+    printf("Read %d bytes\n", read_bytes);
+    printf("The data read is: %s\n", buff_out);
     return read_bytes;
 }
 void freeFile(struct Inode* inode){ // Persona 3
