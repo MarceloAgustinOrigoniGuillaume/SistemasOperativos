@@ -93,7 +93,7 @@ int fs_readfile(const char *path,
              size_t size,
              off_t offset,
              struct fuse_file_info *fi){
-	
+	printf("Is this fucking function ever called?\n");
 	printf("[debug] fs_read - path: %s, offset: %lu, size: %lu\n",
 	       path,
 	       offset,
@@ -104,8 +104,9 @@ int fs_readfile(const char *path,
         if(res == NULL){
             return -ENOENT;
         }
-        
+        printf("Calling readData\n");
         int dt= readData(res, buffer, offset, size);
+        printf("Read %d bytes\n",dt);
         if(dt == 0){
            int count = strlen(no_data)- offset;
            if(count <= 0){
