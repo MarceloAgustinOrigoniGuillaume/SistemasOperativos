@@ -1,0 +1,22 @@
+givens:
+  - id: 0 #title: "Create of file success"
+    format: "Un archivo en '\w+' con nombre '\w+'"
+  - id: 1 #title: "Create of file success"
+    format: "Un archivo en '\w+' con nombre '\w+' y contenido '\w+'"
+  - id: 2 #"Create of file fail"
+    format: "Un directorio en '\w+' con nombre '\w+'"
+whens:
+  - id: 0 #title: "Create of file success"
+    format: "Se crea un archivo en '\w+' con nombre '\w+'"
+  - id: 1 #title: "Create of file success"
+    format: "Se crea un directorio en '\w+' con nombre '\w+'"
+thens:
+  - id: 0 #title: "Create of file success"
+    format: "La accion falla"
+  - id: 1
+    format: "Un archivo con nombre '\w+' es creado en '\w+'"
+  - id: 2
+    format: "Un directorio con nombre '\w+' es creado en '\w+'"
+  - id: 3
+    format: "Se muestra '\w+'"
+

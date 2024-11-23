@@ -1,0 +1,6 @@
+name: Create file
+description: "Creates a simple file on root folder."
+whens:
+   - "Se crea un archivo en '/' con nombre 'archivo1'"
+thens:
+   - "Un archivo con nombre 'archivo1' es creado en '/'"

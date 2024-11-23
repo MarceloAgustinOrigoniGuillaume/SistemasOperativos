@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+gcc testing/reflector.c -o testing/reflector
+
+#./tests/test-shell /shell/sh /shell/tests/reflector $1
