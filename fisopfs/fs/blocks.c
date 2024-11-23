@@ -58,7 +58,8 @@ int writeData(struct Inode* file, const char* buff,  int data_off, size_t count)
         if(data_off + i >= BLOCK_SIZE) {
             // Block full
             printf("Block full\n");
-            return -1;
+            file->data->size += written_bytes;
+            return written_bytes;
         }
         written_bytes++;
         data->first_block->data[data_off + i] = buff[i];
@@ -67,7 +68,6 @@ int writeData(struct Inode* file, const char* buff,  int data_off, size_t count)
     file->data->size += written_bytes;
     printf("The file size is now: %d\n",file->data->size);
     printf("Wrote %d bytes\n", written_bytes);
-
     return written_bytes;
 }
 int readData(struct Inode* file, char* buff_out, int data_off, size_t count){ // Persona 3
@@ -96,9 +96,6 @@ int readData(struct Inode* file, char* buff_out, int data_off, size_t count){ //
         read_bytes++;
         buff_out[i] = data->first_block->data[data_off + i];
     }
-
-    const char itm = *buff_out;
-    printf("first: %c\n", itm);
 
     printf("Read %d bytes\n", read_bytes);
     printf("The data read is: %s\n", buff_out);
