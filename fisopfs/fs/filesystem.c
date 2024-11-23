@@ -22,20 +22,15 @@ char *filedisk = DEFAULT_FILE_DISK;
 
 void hardcodefs(){
    struct Inode* inode = &inodes[0];
-   
    inode->id = 0;
    inode->name = "/";
    inode->type = I_DIR;
-   inode->data = NULL;
-   
    root_inode = inode;
    
+   allocDir(inode);
    
-   inode = &inodes[1];
-   inode->id = 1;
-   inode->name = "somefile";
-   inode->type = I_FILE;
-   inode->data = NULL;
+   inode = createInode("somefile", I_FILE);
+   allocFile(inode);
 }
 
 int fs_getattrs(const char *path, struct stat *st){
@@ -91,6 +86,8 @@ int fs_readdir(const char *path,
 
 }
 
+static const char * no_data = "No DATA\n";
+
 int fs_readfile(const char *path,
              char *buffer,
              size_t size,
@@ -108,9 +105,19 @@ int fs_readfile(const char *path,
             return -ENOENT;
         }
         
-        readData(res, buffer, offset, size);
+        int dt= readData(res, buffer, offset, size);
+        if(dt == 0){
+           int count = strlen(no_data)- offset;
+           if(count <= 0){
+               return 0;
+           }	   
+	   count = size > count  ? count : size;
+
+	   memcpy(buffer, no_data + offset, count);
+           return count;        
+        }
         
-        return -ENOENT; 
+        return dt;
 	/*
 	// Solo tenemos un archivo hardcodeado!
 	if (strcmp(path, "/fisop") != 0)

@@ -65,12 +65,14 @@ struct Inode* searchNew(const struct Inode* root, const char* path, char ** name
 
 void readChildren(struct Inode* dir, struct DirEntries* out){ // Persona 2
     printf("Get Children of %s\n", dir->name);
-    if(strcmp(dir->name, root_inode->name) == 0){
+    if(strcmp(dir->name, "/") == 0){
         if(exists_def == 1){
             out->count = 1;
+            printf("Get ind 2... newfile\n");
             out->first = getinode(2);
             return;
         }
+        printf("Get ind 1... somefile\n");
         out->count = 1;
         out->first = getinode(1);
         

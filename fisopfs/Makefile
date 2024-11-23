@@ -3,13 +3,13 @@ CFLAGS := -ggdb3 -O2 -Wall -std=c11
 CFLAGS += -Wno-unused-function -Wvla
 
 # Necesario para pc de 64 bits?
-CFLAGS += -D_FILE_OFFSET_BITS=64 
+#CFLAGS += -D_FILE_OFFSET_BITS=64 
 COMPILER = $(CC)
 COMPILERFLAGS = $(CFLAGS)
 
 extension = c
 
-src_files ?= $(wildcard ./fs/*.$(extension))
+src_files ?= $(wildcard ./fs/*.$(extension)) fisopfs.c
 
 # Flags for FUSE
 LDLIBS := $(shell pkg-config fuse --cflags --libs)
@@ -21,9 +21,9 @@ all: build
 o_src_files = $(patsubst %.$(extension),%.o,$(src_files))
 
 build: $(o_src_files)
-	$(COMPILER) $(o_src_files) $(FS_NAME).c -o $(FS_NAME) $(COMPILERFLAGS) $(LDLIBS)
+	$(COMPILER) $(o_src_files) -o $(FS_NAME) $(COMPILERFLAGS) $(LDLIBS)
 %.o: %.$(extension)
-	$(COMPILER) $(COMPILERFLAGS) -o $@ -c $<
+	$(COMPILER) $(COMPILERFLAGS) -o $@ -c $< $(LDLIBS)
 	echo
 	echo '-------------------' # visual marker to separate the output of each compilation (may or may not help)
 

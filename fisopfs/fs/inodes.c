@@ -12,8 +12,8 @@ void statOf(struct Inode* inode, struct stat *st){ // Persona 4
 	    st->st_mode = __S_IFDIR | 0755;
 	    st->st_nlink = 2;
     } else if (strcmp(inode->name, "somefile") == 0) {
-	    st->st_uid = 1818;
-	    st->st_mode = __S_IFREG | 0644;
+	    st->st_uid = 2;
+	    st->st_mode = __S_IFREG | 0664;
 	    st->st_size = 2048;
 	    st->st_nlink = 1;
     }
@@ -26,9 +26,10 @@ void deleteInode(struct Inode* inode){ // Persona 4
      printf("DEL INODE %d\n", inode->id);
 }
 
+static int curr = 1;
 struct Inode* createInode(char* name, enum InodeType type){ // Persona 4
-     inodes[2].name = name;
-     inodes[2].type = type;
+     inodes[curr].name = name;
+     inodes[curr].type = type;
      
-     return &inodes[2];
+     return &inodes[curr++];
 }
