@@ -4,8 +4,7 @@ description: "Creates a simple file on root folder."
 steps:
  - do: touch {fs}/file1
    ret: 0
-   
  - do: stat {fs}/file1
-   name: file1
-   type: file
+   path: "{fs}/file1"
+   type: regular empty file
    size: 0

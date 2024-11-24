@@ -3,6 +3,7 @@
 import os
 import shutil
 import sys
+import re
 import tempfile
 import yaml
 
@@ -25,11 +26,6 @@ EXPR_MOUNT = "{fs}/"
 fs_binary = "./fisopfs" # default
 reflector_binary = "testing/reflector" #default
 
-
-def has_name(output, name):
-    print("Contains name",name,"OUT",out)
-    return True;
-
 def compare_strings(current, expected):
     if current != expected:
         message="""
@@ -44,24 +40,27 @@ def compare_strings(current, expected):
         return message
     return None
 
+def mount_fs():
+    p= Popen("mkdir "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
+    p.communicate()
+    if p.returncode != 0:
+       raise Exception("Failed mount of filesystem!")
 
-def launch_fs():
-    return Popen(fs_binary+" "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
-
-def show_fs(fs_popen):
-    (stdout, stderr) = fs_popen.communicate(timeout=timeout)
-    print("------------FS STDOUT:", stdout)
-    print("------------FS STDERR:", stderr)
+def umount_fs(fs_popen):
+    p= Popen("rm -r "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
+    p.communicate()
+    if p.returncode != 0:
+       raise Exception("Failed umount of filesystem!")
 
 def launch_step(step):
-    print("-------> run:",step.command)
+    print("->run:",step)
     p = Popen(step.command, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
     
     if step.stdin:
         (stdout, stderr) = p.communicate(input = step.stdin.encode(),timeout=100)
     else:
         (stdout, stderr) = p.communicate(timeout=100)        
-    step.check(0, stdout, stderr)
+    step.check(p.returncode, stdout, stderr)
 
 class FilesystemTest():
     def __init__(self, filepath: str):
@@ -79,31 +78,19 @@ class FilesystemTest():
             
         if GIVEN in data:
             self.givens = "\n".join(data[GIVEN])
-            #for itm in given[1:]:
-            #    self.givens.append(itm.replace(EXPR_MOUNT, mount_point))
         
         for itm in data[STEPS]:
             self.steps.append(resolve_step(itm))
         
     def run(self):
         print("Given:",self.givens, "\n------\n")
-        launch_step(TestSuccesfulExec("mkdir "+mount_point))
         for step in self.steps:
             launch_step(step)
             
-        launch_step(TestSuccesfulExec("rm -r "+mount_point))
             
 def run_tests(tests):
 
     #tempdir = tempfile.mkdtemp(suffix='-fs-test')
-
-    #print("=== Temporary files will be stored in: {} ===\n".format(tempdir))
-
-    #subs_map = [
-    #    ('{shell_binary}', shell_binary),
-    #    ('{tempdir}', tempdir),
-    #    ('{reflector}', reflector_binary),
-    #]
 
     # Sort for consistent ordering
     tests.sort()
@@ -114,12 +101,17 @@ def run_tests(tests):
 
     for test_path in tests:
         test = FilesystemTest(test_path)#, subs_map)
+        
+        mount_fs()
+        
         try:
             test.run()
+            umount_fs()
             cprint("PASS {}/{}: {} ({})".format(count, total, test.description, test.name), "green")
         except Exception as e:
             cprint("FAIL {}/{}: {} ({}). Exception ocurred: {}".format(count, total, test.description, test.name, e), "red")
             failed += 1
+            umount_fs()
         finally:
             count += 1
 
@@ -139,10 +131,15 @@ def run_single_test(test_name: str):
 
     run_tests([test_path])
 
+
+##### Steps/tests de acciones/comandos en si.
+#####
 class TestSuccesfulExec:
     def __init__(self, command : str):
         self.command = command#.replace(EXPR_MOUNT, mount_point)
         self.stdin = None
+    def __repr__(self):
+       return self.command
     def check(self, ret, stdout, stderr):       
        if ret != 0:
           raise Exception("Check command was succesful failed!")
@@ -160,7 +157,7 @@ class TestStep:
         self.stdin = item.get(IN, None)
         
     def __repr__(self):
-        return "do: "+self.command
+        return self.command+"\nin: "+self.stdin if self.stdin else self.command
     
     def check(self, ret, stdout, stderr):       
        if self.ret != None and self.ret != ret:
@@ -179,12 +176,109 @@ class TestStep:
           if msg:
             raise Exception("Check out failed "+msg)
 
+
+
+CHILDREN = "children"
+
+class LsStep(TestStep):
+    def __init__(self, item, command):
+       super().__init__(item, command)
+       self.exp_children = []
+       for child in item[CHILDREN]:
+           self.exp_children.append(str(child))
+       
+    
+    def check(self, ret, stdout, stderr):
+       super().check(ret, stdout, stderr)
+       res = stdout.decode()
+       
+       if(len(self.exp_children) == 0):
+           if(res != None):
+               raise Exception("Expected no children! for ls")
+           return
+       if(res == None):
+           raise Exception("Expected children! none on ls out")
+       
+       itms = res.split("\n")[0:-1] # There is a final '' item.
+       
+       if len(itms) != len(self.exp_children):
+           raise Exception("Expected count of childre different got: "+str(len(itms))+" wanted: "+str(len(self.exp_children)))
+       
+       for child in itms:
+           if not child in self.exp_children:
+                raise Exception("Unexpected child "+child)
+    
+
+
+
+
+K_PATH = "path"
+K_TYPE = "type"
+K_SIZE = "size"
+K_BLOCKS = "blocks"
+K_INODE = "inode"
+K_REFS = "refs"
+K_PERM = "perm"
+
+ANY_PATH= "(?:[\w\d]+/)*[\w\d]+"
+ANY_VL= "(?:\w+\s*)+"
+ANY_NUM= "\d+"
+
+line_sep = "\s*\n\s*"
+
+base_reg = line_sep.join([
+    "\s*File:\s*{path}",
+    "\s*".join([
+        "Size:\s*{size}",
+        "Blocks:\s*{blocks}",
+        "IO\sBlock: {io_block}",
+        "{type_f}",
+    ]),    
+    "Device:\s*{dev}\s*Inode:\s*{inode}\s*Links:\s*{refs}\s*Access:\s*\({acc}"
+    ]
+) 
+
 class StatStep(TestStep):
     def __init__(self, item, command):
        super().__init__(item, command)
+       
+       self.itm = item
+       self.path = item.get(K_PATH, ANY_PATH)
+       if self.path != ANY_PATH:
+           self.path = self.path.replace(EXPR_MOUNT, mount_point)
+                  
+       size = item.get(K_SIZE, ANY_NUM)
+       type_f = item.get(K_TYPE, ANY_VL)
+       
+       reg = base_reg.format(
+            path = self.path,
+            size = size,
+            type_f = type_f,
+            inode = item.get(K_INODE, ANY_NUM),
+            acc = item.get(K_PERM, ANY_NUM),
+            blocks = item.get(K_BLOCKS, ANY_NUM),
+            refs = item.get(K_REFS, ANY_NUM),
+            io_block = ANY_NUM,
+            dev = ANY_PATH,
+       )
+       reg = reg.replace(" ", "\s")
+       self.reg = re.compile(reg)
+       
+       
     def check(self, ret, stdout, stderr):
        super().check(ret, stdout, stderr)
-       print("-->Now stat validation!")
+       res = stdout.decode()
+       
+       if self.reg.match(res):
+           return
+       msg = "\nwith path: '"+self.path+"'"
+       
+       for vl in self.itm:
+           if(vl != DO and vl != K_PATH):
+                msg+= "\n with "+vl+": "+ str(self.itm[vl]) 
+       raise Exception("Failed validation of stat expected: "+msg+"\n got: "+res)
+       
+       
           
     def __repr__(self):
         return "stat: "+self.command
@@ -201,7 +295,8 @@ def resolve_step(item):
 
 
 special_commands = {
-    "stat" : StatStep
+    "stat" : StatStep,
+    "ls" : LsStep,
 }
 
 if __name__ == "__main__":
@@ -221,4 +316,6 @@ if __name__ == "__main__":
         run_single_test(sys.argv[4])
     else:
         run_all_tests()
+
+
 
