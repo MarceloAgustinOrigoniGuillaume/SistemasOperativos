@@ -1,9 +1,10 @@
-name: Create file
-description: "Creates a simple file on root folder."
-givens:
-   - "Un archivo en '/' con nombre 'archivo1'"
-whens:
-   - "Se crea un archivo en '/' con nombre 'archivo1'"
-thens:
-   - "Se muestra 'uno'"
-   
+name: Write/Read file
+description: "Given a file on root folder writes and reads content"
+given:
+ - touch {fs}/file1
+steps:
+ - do: cat > {fs}/file1
+   in: "uno"
+   ret: 0
+ - do: cat {fs}/file1
+   out: "uno"
