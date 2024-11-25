@@ -24,7 +24,7 @@ int writeMsg(struct SerialFD* writer, const char* buffer, int count);
 
 int readInt(struct SerialFD* writer, int* num);
 int readShort(struct SerialFD* writer, short* num);
-char* readStr(struct SerialFD* writer, int * ret);
+int readStr(struct SerialFD* writer, char** out);
 char * readMsg(struct SerialFD* writer, int* ret);
 int readCapMsg(struct SerialFD* writer, char* buffer,short * msg_len, int max);
 

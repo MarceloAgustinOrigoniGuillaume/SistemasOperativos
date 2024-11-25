@@ -3,43 +3,45 @@
 #include "fs/serial.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "fs/inode.h"
 
+static void saveInode(struct SerialFD* writer, struct Inode* inode){
+    writeInt(writer, inode->id);
+    printf("WROTE ID %d\n", inode->id); 
+    writeStr(writer, inode->name);
+    writeInt(writer, 44); //Perm?
+    
+}
+
+static void loadInode(struct SerialFD* writer, struct Inode* inode){
+    readInt(writer, &inode->id);
+    printf("ID IS %d\n", inode->id); 
+    readStr(writer, &inode->name);
+    printf("NAME IS %s\n", inode->name); 
+    int prm;
+    readInt(writer, &prm); //Perm?
+    printf("PREM %d\n", prm); 
+}
 
 
 static int writeData(const char * filename){
-     printf("ALL GOOD?! %s\n",filename);
+     printf("ALL GOOD?!---------- %s\n",filename);
      int err = 0;
      struct SerialFD writer = openWriter(filename, &err);
-     if(err != 0){
-          printf("NOT GOOD!!!%d \n", err);
-          return err;
-     }
      
-     err = writeStr(&writer,"\nSEGUNDO MENSAJE\n");
-     if(err != 0){
-         printf("FAILED WRITE!%d\n",err);
-         return err;
-     }
-     err = writeInt(&writer, 23);
-     if(err != 0){
-         printf("FAILED WRITE!%d\n",err);
-         return err;
-     }
+     struct Inode inodo;
      
-     err = writeStr(&writer,"UN MENSAJE Y MAS");
-     if(err != 0){
-         printf("FAILED WRITE!%d\n",err);
-         return err;
-     }
-     err = writeInt(&writer, 54);
-     if(err != 0){
-         printf("FAILED WRITE!%d\n",err);
-         return err;
-     }
+     inodo.name = "INODO 2!";
+     inodo.id = 252;
      
-     printf("YES ALL GOOD!!!\n");
+     saveInode(&writer, &inodo);
+     saveInode(&writer, &inodo);
      
+     inodo.name = "INODO2321!";
+     inodo.id = 321;
+     saveInode(&writer, &inodo);
      closeWriter(&writer);
+     
      return 0;
 }
 
@@ -47,39 +49,11 @@ static int showData(const char * filename){
      printf("ALL GOOD?! %s\n",filename);
      int err = 0;
      struct SerialFD reader = openReader(filename, &err);
-     if(err != 0){
-          printf("NOT GOOD!!!%d \n", err);
-          return err;
-     }
+     struct Inode inodo;
      
-     char * first = readStr(&reader, &err);
-     printf("FIRST '%s' \n", first);
-     if(err != 0){
-         printf("FAILED READ!%d\n",err);
-         return err;
-     }
-     int res = 2;
-     err = readInt(&reader, &res);
-     if(err != 0){
-         printf("FAILED READ!%d\n",err);
-         return err;
-     }
-     printf("GOT NUM %d\n",res);
-
-     char * second = readStr(&reader, &err);
-     printf("SECOND '%s'\n", second);
-     
-     
-     
-     err = readInt(&reader, &res);
-     if(err != 0){
-         printf("FAILED READ!%d\n",err);
-         return err;
-     }
-     printf("GOT NUM %d\n",res);
-     
-     free(first);
-     free(second);
+     loadInode(&reader, &inodo);
+     loadInode(&reader, &inodo);
+     loadInode(&reader, &inodo);
      
      closeWriter(&reader);
      

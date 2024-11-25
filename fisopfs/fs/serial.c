@@ -111,27 +111,29 @@ int writeStr(struct SerialFD* writer, const char* str){
 }
 
 
-char* readStr(struct SerialFD* writer, int * ret){
+int readStr(struct SerialFD* writer, char** out){
      short msg_len;
-     *ret = readShort(writer, &msg_len);
-     if(*ret != 0){
-         return NULL;
+     int ret = readShort(writer, &msg_len);
+     if(ret != 0){
+         return ret;
      }
-     printf("---> READ MSGLEN! %d \n",msg_len);
+     
+     //printf("---> READ MSGLEN! %d \n",msg_len);
      
      char * res = (char*) malloc(sizeof(char)*(msg_len+1)); 
      if(res == NULL){
-         *ret = -1;
-         return NULL;
+         return -1;
      }
-     *ret = readAll(writer->fd, res, msg_len);
-     if(*ret != 0){
+     
+     ret = readAll(writer->fd, res, msg_len);
+     if(ret != 0){
          free(res);
-         return NULL;
+         return ret;
      }
      // Por las dudas
      *(res+msg_len+1) = 0;
-     return res;
+     *out = res;
+     return 0;
 }
 char * readMsg(struct SerialFD* writer, int* ret){
      short msg_len;
