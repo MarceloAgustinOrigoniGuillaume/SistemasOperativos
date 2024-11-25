@@ -6,9 +6,21 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <arpa/inet.h>
+
+void showBytes(const uint8_t* buff, int count){
+    printf("count: %d 0x%02X(%d)",count, *buff,(char)*buff);
+    
+    for(int ind = 1; ind< count; ind++){
+        uint8_t vl = *(buff+ind);
+        printf(", %d: 0x%02X(%d)",ind,vl, (char)vl);
+    }
+    printf("\n");
+    
+}
 
 
-static int tryReadAll(int fd, char* out, int count){
+static int tryReadAll(int fd, uint8_t* out, int count){
      //printf("TRY READ %d\n", count);
      int rd = read(fd, out , count);
      //printf("RD %d\n", rd);
@@ -28,7 +40,7 @@ static int tryReadAll(int fd, char* out, int count){
      return tot;
 }
 
-static int tryWriteAll(int fd, const char* src, int count){
+static int tryWriteAll(int fd, const uint8_t* src, int count){
      int wr = write(fd, src , count);
      int tot = 0;
      
@@ -45,54 +57,60 @@ static int tryWriteAll(int fd, const char* src, int count){
      return tot;
 }
 
-static int writeAll(struct SerialFD* writer, const char* src, int count){
-     if(tryWriteAll(writer->fd, src, count) != count){
-         writer->wrote_count+= count;
+static int writeAll(struct SerialFD* writer, const uint8_t* src, int count){
+     int wr = tryWriteAll(writer->fd, src, count);
+     if(wr != count){
+         fprintf(stderr,"FAILED WRITE! only wrote %d of %d\n",wr,count);
          return errno;
      }
+     writer->wrote_count+= count;
+     
+     //printf(" WROTE:");
+     //showBytes(src, count);
      
      return 0;
 }
 
-static int readAll(int fd, char* out, int count){
-     if(tryReadAll(fd, out, count) != count){
+static int readAll(int fd, uint8_t* out, int count){
+     int rd = tryReadAll(fd, out, count);
+     if(rd != count){
+         fprintf(stderr,"FAILED READ! only read %d of %d\n",rd,count);
          return errno;
      }     
+     //printf(" READ:");
+     //showBytes(out, count);
+     
      return 0;
 }
 
 
 
 int writeInt(struct SerialFD* writer, int num){
-    if(write(writer->fd,&num,1) == -1){
-        return errno;
-    }
-    writer->wrote_count+= sizeof(int); 
-    return 0;
+    num = htonl(num);
+    return writeAll(writer, (uint8_t*)&num, sizeof(int));
 }
 
 int readInt(struct SerialFD* writer, int* num){
-    if(read(writer->fd,num,1) == -1){
-        return errno;
+    int ret= readAll(writer->fd, (uint8_t*)num, sizeof(int));
+    if(ret ==0){
+        *num = ntohl(*num);
     }
-    return 0;
+    
+    return ret;
 }
 
 int writeShort(struct SerialFD* writer, short num){
-    if(write(writer->fd,&num,1) == -1){
-        return errno;
-    }
-    writer->wrote_count+= sizeof(short); 
-    return 0;
-
+    num = htons(num);
+    return writeAll(writer, (uint8_t*)&num, sizeof(short));
 }
 
 int readShort(struct SerialFD* writer, short* num){
-    if(read(writer->fd,num,1) == -1){
-        return errno;
+    int ret= readAll(writer->fd, (uint8_t*)num, sizeof(short));
+    if(ret ==0){
+        *num = ntohs(*num);
     }
-    return 0;
-    //return readAll(writer->fd, (char*)&num , sizeof(short));
+    
+    return ret;
 }
 
 
@@ -103,7 +121,7 @@ int writeMsg(struct SerialFD* writer, const char* buffer, int count){
         return err;
     }
     
-    return writeAll(writer, buffer , count);
+    return writeAll(writer, (const uint8_t*)buffer , count);
 }
 // 0 terminated! se escribe directamente y se busca por el 0.
 int writeStr(struct SerialFD* writer, const char* str){
@@ -118,9 +136,9 @@ int readStr(struct SerialFD* writer, char** out){
          return ret;
      }
      
-     //printf("---> READ MSGLEN! %d \n",msg_len);
+     //printf("---> READ STRLEN! %d \n",msg_len);
      
-     char * res = (char*) malloc(sizeof(char)*(msg_len+1)); 
+     uint8_t * res = (uint8_t*) malloc(sizeof(uint8_t)*(msg_len+1)); 
      if(res == NULL){
          return -1;
      }
@@ -132,7 +150,7 @@ int readStr(struct SerialFD* writer, char** out){
      }
      // Por las dudas
      *(res+msg_len+1) = 0;
-     *out = res;
+     *out = (char*)res;
      return 0;
 }
 char * readMsg(struct SerialFD* writer, int* ret){
@@ -142,7 +160,8 @@ char * readMsg(struct SerialFD* writer, int* ret){
          return NULL;
      }
      
-     char * res = (char*) malloc(sizeof(char)*(msg_len));  
+     //printf("READ MSG len %d\n", msg_len);
+     uint8_t * res = (uint8_t*) malloc(sizeof(uint8_t)*(msg_len));  
      if(res == NULL){
          *ret = -1;
          return NULL;
@@ -152,7 +171,7 @@ char * readMsg(struct SerialFD* writer, int* ret){
          free(res);
          return NULL;
      }
-     return res;
+     return (char*)res;
 }
 
 int readCapMsg(struct SerialFD* writer, char* buffer, short * msg_len, int max){
@@ -166,7 +185,7 @@ int readCapMsg(struct SerialFD* writer, char* buffer, short * msg_len, int max){
          return -1;
      }
      
-     return readAll(writer->fd, buffer, *msg_len);
+     return readAll(writer->fd, (uint8_t*)buffer, *msg_len);
 }
 
 

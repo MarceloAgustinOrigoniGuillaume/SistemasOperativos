@@ -47,7 +47,7 @@ docker-attach:
 	docker exec -it fisopfs bash
 
 clean:
-	rm -rf $(EXEC) *.o core vgcore.* $(FS_NAME)
+	rm -rf $(EXEC) *.o core vgcore.* $(FS_NAME) dbg_serial
 	rm -f $(o_src_files)
 
 .PHONY: all build clean format docker-build docker-run docker-attach

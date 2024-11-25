@@ -8,17 +8,6 @@
 #include <stdlib.h>
 #include "fs/inode.h"
 
-void showBytes(const char* buff, int count){
-    printf("count: %d 0x%02X(%u)",count, (unsigned char)*buff,(unsigned char)*buff);
-    
-    for(int ind = 1; ind< count; ind++){
-        char vl = *(buff+ind);
-        printf(", 0x%02X(%u)",(unsigned char)vl, vl);
-    }
-    printf("\n");
-}
-
-
 static void testUno(const char *filename){
      int err = 0;
      struct SerialFD writer = openWriter(filename, &err);
@@ -32,27 +21,27 @@ static void testUno(const char *filename){
      
 
      struct SerialFD reader = openReader(filename, &err);
-     closeWriter(&reader);
      int out;
      char * outStr = NULL;
      
-     readInt(&reader, &out);
+     err = readInt(&reader, &out);
      if(out != 25){
-         printf("---> FIRST NUM NO ERA 25 fue %d!\n", out);
+         printf("--->ERR %d FIRST NUM NO ERA 25 fue %d!\n",err, out);
      }
      
-     readStr(&reader, &outStr);
+     err =readStr(&reader, &outStr);
      
      if(outStr == NULL){
-         printf("-> out str era null\n");
+         printf("->ERR %d out str era null\n",err);
      } else if(strcmp("UNO", outStr) != 0){
-         printf("---> FIRST STR NO ERA 'UNO' fue '%s'\n", outStr);
+         printf("--->ERR %d FIRST STR NO ERA 'UNO' fue '%s'\n",err, outStr);
      }
      
-     readInt(&writer, &out);
+     err = readInt(&reader, &out);
      if(out != 50){
-         printf("---> SECOND NUM NO ERA 50! fue %d!\n", out);
+         printf("--->ERR %d SECOND NUM NO ERA 50! fue %d!\n",err, out);
      }
+     closeWriter(&reader);
 
 }
 
@@ -76,30 +65,25 @@ static void loadInode(struct SerialFD* writer, struct Inode* inode){
 }
 
 
-static int writeData(const char * filename){
-     printf("ALL GOOD?!---------- %s\n",filename);
+static int testInode(const char * filename){
+     printf("TEST INODE?!---------- %s\n",filename);
      int err = 0;
      struct SerialFD writer = openWriter(filename, &err);
      
-     struct Inode inodo;
+     struct Inode wrInode;
      
-     inodo.name = "INODO 2!";
-     inodo.id = 252;
+     wrInode.name = "INODO 2!";
+     wrInode.id = 43;
      
-     saveInode(&writer, &inodo);
-     saveInode(&writer, &inodo);
+     saveInode(&writer, &wrInode);
+     saveInode(&writer, &wrInode);
      
-     inodo.name = "INODO2321!";
-     inodo.id = 321;
-     saveInode(&writer, &inodo);
+     wrInode.name = "INODO2321!";
+     wrInode.id = 321;
+     saveInode(&writer, &wrInode);
      closeWriter(&writer);
      
-     return 0;
-}
-
-static int showData(const char * filename){
-     printf("ALL GOOD?! %s\n",filename);
-     int err = 0;
+     printf("WROTE ALL GOOD?!---------- read: %s\n",filename);
      struct SerialFD reader = openReader(filename, &err);
      struct Inode inodo;
      
@@ -112,26 +96,18 @@ static int showData(const char * filename){
      return 0;
 }
 
-
-
 int
 main(int argc, char *argv[])
 {
+     /*
      int data = 512+ 254;
      char* buff = "UN ELEMENTO!";
-     showBytes(buff, strlen(buff));
+     showBytes((uint8_t*)buff, strlen(buff));
      printf("----------\n");
      buff = (char*) &data;
-     showBytes(buff, sizeof(data));
-     
+     showBytes((uint8_t*)buff, sizeof(data));
+     */
      
      testUno(argv[1]);
-     
-     return 0;
-     //int ret = writeData(argv[1]);
-     //if(ret != 0){
-     //    return ret;
-     //}
-     
-     //return showData(argv[1]);
+     return testInode(argv[1]);
 }

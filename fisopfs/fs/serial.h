@@ -1,12 +1,17 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+typedef unsigned char uint8_t; 
+
 struct SerialFD {
     int fd;
     int wrote_count;
     //Writer(int _fd, int _wrote): fd(_fd), wrote_count(_wrote){} 
     //Writer(int _fd): {} 
 };
+
+void showBytes(const uint8_t* buff, int count);
+
 
 int writeInt(struct SerialFD* writer, int num);
 
