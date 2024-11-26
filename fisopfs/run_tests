@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+gcc testing/reflector.c -o testing/reflector
+
+testing/run_tests.py ./fisopfs test_dir/ testing/reflector $1
+#./tests/test-shell /shell/sh /shell/tests/reflector $1

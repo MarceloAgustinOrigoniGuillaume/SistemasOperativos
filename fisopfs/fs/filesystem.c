@@ -22,20 +22,15 @@ char *filedisk = DEFAULT_FILE_DISK;
 
 void hardcodefs(){
    struct Inode* inode = &inodes[0];
-   
    inode->id = 0;
    inode->name = "/";
    inode->type = I_DIR;
-   inode->data = NULL;
-   
    root_inode = inode;
    
+   allocDir(inode);
    
-   inode = &inodes[1];
-   inode->id = 1;
-   inode->name = "somefile";
-   inode->type = I_FILE;
-   inode->data = NULL;
+   inode = createInode("somefile", I_FILE);
+   allocFile(inode);
 }
 
 int fs_getattrs(const char *path, struct stat *st){
@@ -92,12 +87,14 @@ int fs_readdir(const char *path,
 
 }
 
+static const char * no_data = "No DATA\n";
+
 int fs_readfile(const char *path,
              char *buffer,
              size_t size,
              off_t offset,
              struct fuse_file_info *fi){
-	
+	printf("Is this fucking function ever called?\n");
 	printf("[debug] fs_read - path: %s, offset: %lu, size: %lu\n",
 	       path,
 	       offset,
@@ -108,10 +105,21 @@ int fs_readfile(const char *path,
         if(res == NULL){
             return -ENOENT;
         }
+        printf("Calling readData\n");
+        int dt= readData(res, buffer, offset, size);
+        printf("Read %d bytes\n",dt);
+        if(dt == 0){
+           int count = strlen(no_data)- offset;
+           if(count <= 0){
+               return 0;
+           }	   
+	   count = size > count  ? count : size;
+
+	   memcpy(buffer, no_data + offset, count);
+           return count;        
+        }
         
-        readData(res, buffer, offset, size);
-        
-        return -ENOENT; 
+        return dt;
 	/*
 	// Solo tenemos un archivo hardcodeado!
 	if (strcmp(path, "/fisop") != 0)
@@ -161,6 +169,10 @@ int fs_touch(const char *path, mode_t mode,
 	if(child == NULL){
 	     return -ENOENT;	     
 	}
+	
+	allocFile(child); // Crea datos
+	
+	
 	addChild(parent, child);
         return -ENOENT;	     
 }
@@ -184,6 +196,7 @@ int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
 	     return -ENOENT;	     
 	}
 	
+	allocDir(child); // Crea directorio
 	addChild(parent, child);
         return -ENOENT;	     
 }

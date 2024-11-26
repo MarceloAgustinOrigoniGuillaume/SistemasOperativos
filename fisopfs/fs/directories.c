@@ -17,6 +17,14 @@ char *strdup(const char *src) {
     return dst;
 }
 
+static struct DirData def_data;
+
+int allocDir(struct Inode* dir){ // Persona 2
+    printf("ALLOC DIR %s\n", dir->name);
+    dir->data = (struct Data *)&def_data;
+    return 0;
+}
+
 // Libera al directorio, recursivamente
 void freeDir(struct Inode* dir){ // Persona 2
     printf("FREE DIR %s\n", dir->name);

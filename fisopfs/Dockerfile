@@ -9,4 +9,10 @@ RUN apt-get -y install \
 	libbsd-dev libc6-dev gcc-multilib linux-libc-dev \
 	pkg-config libfuse2 libfuse-dev
 
+RUN apt-get install -y python3-pip time
+
+RUN pip install termcolor pyyaml
+
 WORKDIR /fisopfs
+
+

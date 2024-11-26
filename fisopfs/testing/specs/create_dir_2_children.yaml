@@ -1,0 +1,14 @@
+name: Create directory
+description: "Creates a simple directory on root folder."
+
+steps:
+ - do: mkdir {fs}/dir1
+   ret: 0
+ - do: touch {fs}/dir1/f1
+   ret: 0
+ - do: touch {fs}/dir1/f2
+   ret: 0
+ - do: ls {fs}/dir1
+   children:
+      - f1
+      - f3

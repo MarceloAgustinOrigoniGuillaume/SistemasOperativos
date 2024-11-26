@@ -12,7 +12,7 @@ struct Inode* free_inode;
 struct Inode* root_inode;
 
 // Manejo de inodos
-struct Inode* createInode(char* name, enum InodeType tipo); // Persona 4
+struct Inode* createInode(const char* name, enum InodeType tipo); // Persona 4
 void deleteInode(struct Inode* inode); // Persona 4
 void statOf(struct Inode* inode, struct stat *st); // Persona 4
 

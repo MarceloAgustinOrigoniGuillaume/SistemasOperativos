@@ -3,13 +3,13 @@ CFLAGS := -ggdb3 -O2 -Wall -std=c11
 CFLAGS += -Wno-unused-function -Wvla
 
 # Necesario para pc de 64 bits?
-CFLAGS += -D_FILE_OFFSET_BITS=64 
+#CFLAGS += -D_FILE_OFFSET_BITS=64 
 COMPILER = $(CC)
 COMPILERFLAGS = $(CFLAGS)
 
 extension = c
 
-src_files ?= $(wildcard ./fs/*.$(extension))
+src_files ?= $(wildcard ./fs/*.$(extension)) #fisopfs.c
 
 # Flags for FUSE
 LDLIBS := $(shell pkg-config fuse --cflags --libs)
@@ -22,8 +22,9 @@ o_src_files = $(patsubst %.$(extension),%.o,$(src_files))
 
 build: $(o_src_files)
 	$(COMPILER) $(o_src_files) $(FS_NAME).c -o $(FS_NAME) $(COMPILERFLAGS) $(LDLIBS)
+	$(COMPILER) $(o_src_files) main_serial.c -o dbg_serial $(COMPILERFLAGS) $(LDLIBS)
 %.o: %.$(extension)
-	$(COMPILER) $(COMPILERFLAGS) -o $@ -c $<
+	$(COMPILER) $(COMPILERFLAGS) -o $@ -c $< $(LDLIBS)
 	echo
 	echo '-------------------' # visual marker to separate the output of each compilation (may or may not help)
 
@@ -46,6 +47,7 @@ docker-attach:
 	docker exec -it fisopfs bash
 
 clean:
-	rm -rf $(EXEC) *.o core vgcore.* $(FS_NAME)
+	rm -rf $(EXEC) *.o core vgcore.* $(FS_NAME) dbg_serial
+	rm -f $(o_src_files)
 
 .PHONY: all build clean format docker-build docker-run docker-attach

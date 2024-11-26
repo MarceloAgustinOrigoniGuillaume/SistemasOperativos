@@ -37,6 +37,9 @@ struct Inode* searchNew(const char* path, char ** name_child); // Persona 2
 // Para el ls, lista los hijos en el struct out.
 void readChildren(struct Inode* dir, struct DirEntries* out); // Persona 2
 
+// Crea los datos del dir
+int allocDir(struct Inode* dir); // Persona 2
+
 // Libera al directorio, recursivamente
 void freeDir(struct Inode* dir); // Persona 2
 
