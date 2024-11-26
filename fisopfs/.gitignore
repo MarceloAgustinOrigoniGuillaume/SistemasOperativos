@@ -1,3 +1,4 @@
 fisopfs
 *.o
 dbg_*
+persistence_file.fisopfs

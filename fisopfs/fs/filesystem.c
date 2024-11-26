@@ -234,25 +234,35 @@ int fs_unlink(const char* path){
 
 void* fs_init(struct fuse_conn_info *conn){
 	printf("[debug] fisopfs init from %s\n",filedisk);
-
-	struct SerialFD fd;//openReader(filedisk, err);
-	fd.fd = -1;
-	fd.wrote_count = 0;
+	int err = 0;
+	struct SerialFD fd = openReader(filedisk, &err);
+	
+	if(err != 0){
+	    printf("Serialize open file for deserializing failed! %d '%s'\n", err,filedisk);
+	    hardcodefs();
+	    return NULL;
+	}
 	
 	deserializeBlocks(&fd);
 	deserializeInodes(&fd);
 
-	
+	closeWriter(&fd);
 	hardcodefs();
 	return NULL;
 }
 
 void fs_destroy(){
 	printf("[debug] fisopfs serialize to %s!\n",filedisk);
-	struct SerialFD fd;//openWriter(filedisk, err);
-	fd.fd = -1;
-	fd.wrote_count = 0;
+	int err= 0;
+	struct SerialFD fd = openWriter(filedisk, &err);
+	
+	if(err != 0){
+	    printf("Serialize open file for serializing failed! %d '%s'\n",err, filedisk);
+	    return;
+	}
 	
 	serializeBlocks(&fd);
 	serializeInodes(&fd);
+	
+	closeWriter(&fd);
 }
