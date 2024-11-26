@@ -1,11 +1,20 @@
 #include "./blocks.h"
 #include <stdio.h>
 #include <stdlib.h>
-void serializeFileData(int fd_out, const struct FileData* data_out){
-    printf("SERIALIZE fd: %d , usl: %d\n",fd_out,data_out->first_block->tempuseless);
+
+void serializeBlocks(struct SerialFD* fd_out){
+    printf("SERIALIZE blocks fd: %d \n",fd_out->fd);
 }
-void deserializeFileData(int fd_in, struct FileData* data){
-    printf("DESERIALIZE fd: %d , usl: %d\n",fd_in,data->first_block->tempuseless);
+void deserializeBlocks(struct SerialFD* fd_in){
+    printf("DESERIALIZE blocks fd: %d\n",fd_in->fd);
+}
+
+
+void serializeFileData(struct SerialFD* fd_out, const struct FileData* data_out){
+    printf("SERIALIZE fd: %d , usl: %d\n",fd_out->fd,data_out->first_block->tempuseless);
+}
+void deserializeFileData(struct SerialFD* fd_in, struct FileData* data){
+    printf("DESERIALIZE fd: %d , usl: %d\n",fd_in->fd,data->first_block->tempuseless);
 }
 
 struct Block * first_free = NULL;

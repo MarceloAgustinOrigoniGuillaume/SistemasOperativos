@@ -2,6 +2,7 @@
 #define BLOCKS_H
 #include "./block.h"
 #include "./inode.h"
+#include "./serial.h"
 #include <stddef.h>
 
 
@@ -10,8 +11,11 @@ struct FileData{ // Persona 3
    struct Block* first_block;
 };
 
-void serializeFileData(int fd_out, const struct FileData* data_out);    // Persona 3/1?
-void deserializeFileData(int fd_in, struct FileData* data);   // Persona 3/1?
+void serializeBlocks(struct SerialFD* fd_out);    // Persona 3/1?
+void deserializeBlocks(struct SerialFD* fd_in);   // Persona 3/1?
+
+void serializeFileData(struct SerialFD* fd_out, const struct FileData* data_out);    // Persona 3/1?
+void deserializeFileData(struct SerialFD* fd_in, struct FileData* data);   // Persona 3/1?
 
 
 #define BLOCK_COUNT 512

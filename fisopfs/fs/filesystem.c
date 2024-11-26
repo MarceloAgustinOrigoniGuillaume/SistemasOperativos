@@ -2,6 +2,7 @@
 #include "./blocks.h"
 #include "./directories.h"
 #include "./inodes.h"
+#include "./serial.h"
 
 #include <fuse.h>
 #include <stdio.h>
@@ -233,10 +234,25 @@ int fs_unlink(const char* path){
 
 void* fs_init(struct fuse_conn_info *conn){
 	printf("[debug] fisopfs init from %s\n",filedisk);
+
+	struct SerialFD fd;//openReader(filedisk, err);
+	fd.fd = -1;
+	fd.wrote_count = 0;
+	
+	deserializeBlocks(&fd);
+	deserializeInodes(&fd);
+
+	
 	hardcodefs();
 	return NULL;
 }
 
 void fs_destroy(){
 	printf("[debug] fisopfs serialize to %s!\n",filedisk);
+	struct SerialFD fd;//openWriter(filedisk, err);
+	fd.fd = -1;
+	fd.wrote_count = 0;
+	
+	serializeBlocks(&fd);
+	serializeInodes(&fd);
 }

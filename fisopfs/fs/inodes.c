@@ -3,6 +3,14 @@
 #include <string.h>
 #include <stdlib.h>
 
+void serializeInodes(struct SerialFD* fd_out){    // Persona 4/1?
+    printf("SERIALIZE inodes fd: %d \n",fd_out->fd);
+
+}
+void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
+    printf("DESERIALIZE inodes fd: %d \n",fd_in->fd);
+}
+
 struct Inode* root_inode= NULL;
 static int new_inodo_id = 1;
 
