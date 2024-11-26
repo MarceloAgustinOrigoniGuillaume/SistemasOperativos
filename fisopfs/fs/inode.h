@@ -2,6 +2,7 @@
 #define INODE_H
 
 typedef int inode_id_t;
+
 struct Data {
    int size;
 };

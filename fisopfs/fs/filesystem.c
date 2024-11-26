@@ -41,7 +41,7 @@ void hardcodefs(){
 int fs_getattrs(const char *path, struct stat *st){
      printf("[debug] fs_getattr - path: %s\n", path);
      
-     struct Inode* res = searchRelative(root_inode, path);
+     struct Inode* res = searchRelative(path);
      
      if(res == NULL){
          return -ENOENT;
@@ -56,38 +56,39 @@ int fs_readdir(const char *path,
                 fuse_fill_dir_t filler,
                 off_t offset,
                 struct fuse_file_info *fi){
-	
-       printf("[debug] fs_readdir - path: %s\n", path);
-       
-       struct Inode* res = searchRelative(root_inode, path);
-       
-       if(res == NULL){
-           // Si nos preguntan por el directorio raiz, solo tenemos un archivo
-           if (strcmp(path, "/") == 0) {
-                 // Los directorios '.' y '..'
-                 filler(buffer, ".", NULL, 0);
-                 filler(buffer, "..", NULL, 0);
-	        filler(buffer, "fisop", NULL, 0);
-	        return 0;
-           }       
-           return -ENOENT;
-       }
-	
-       // Los directorios '.' y '..'
-       filler(buffer, ".", NULL, 0);
-       filler(buffer, "..", NULL, 0);
 
-       struct DirEntries children;
-       
-       readChildren(res, &children);
-       struct Inode* child;
-       for(int i = 0; i< children.count; i++){
-           child = children.first+ i;
-           filler(buffer, child->name, NULL, 0);
-       }
-       
+    printf("[debug] fs_readdir - path: %s\n", path);
+    
+    struct Inode* res = searchRelative(path);
+    
+    if (res == NULL){
+        // Si nos preguntan por el directorio raiz, solo tenemos un archivo
+        if (strcmp(path, "/") == 0) {
+            // Los directorios '.' y '..'
+            filler(buffer, ".", NULL, 0);
+            filler(buffer, "..", NULL, 0);
+            filler(buffer, "fisop", NULL, 0);
+            return 0;
+        }       
+        return -ENOENT;
+    }
 
-       return 0;
+    // Los directorios '.' y '..'
+    filler(buffer, ".", NULL, 0);
+    filler(buffer, "..", NULL, 0);
+
+    struct DirEntries *children = malloc(sizeof(struct DirEntries*) * res->data->size);
+    
+    readChildren(res, children);
+    struct Inode* child;
+    for(int i = 0; i < res->data->size; i++){
+        child = children[i].inode;
+        filler(buffer, child->name, NULL, 0);
+    }
+    
+    free(children);
+
+    return 0;
 
 }
 
@@ -102,7 +103,7 @@ int fs_readfile(const char *path,
 	       offset,
 	       size);
 	
-        struct Inode* res = searchRelative(root_inode, path);
+        struct Inode* res = searchRelative(path);
        
         if(res == NULL){
             return -ENOENT;
@@ -134,7 +135,7 @@ int fs_write(const char *path, const char *buf,
 		  size_t size, off_t off, struct fuse_file_info *fi){
 	printf("[debug] fisopfs write file %s s: %ld off: %li\n",
 	       path, size, off);
-        struct Inode* res = searchRelative(root_inode, path);
+        struct Inode* res = searchRelative(path);
         if(res == NULL){
             return -ENOENT;
         }
@@ -151,7 +152,7 @@ int fs_touch(const char *path, mode_t mode,
 	       path, mode);
 	
 	char * name_child = NULL;
-	struct Inode* parent= searchNew(root_inode, path, &name_child);
+	struct Inode* parent = searchNew(path, &name_child);
 	if(parent == NULL || name_child == NULL){
 	     return -ENOENT;
 	}
@@ -171,7 +172,7 @@ int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
 	       path, mode);
 	       
 	char * name_child = NULL;
-	struct Inode* parent= searchNew(root_inode, path, &name_child);
+	struct Inode* parent= searchNew(path, &name_child);
 	
 	if(parent == NULL || name_child == NULL){
 	     return -ENOENT;
@@ -191,7 +192,7 @@ int fs_rmdir(const char *path){
 	printf("[debug] fisopfs rmdir %s\n",
 	       path);
 	       
-	struct Inode* child = rmChild(root_inode, path);
+	struct Inode* child = rmChild(path);
 	if(child == NULL){
             return -ENOENT;
         }
@@ -206,7 +207,7 @@ int fs_unlink(const char* path){
 	printf("[debug] fisopfs unlink %s\n",
 	       path);
 	       
-	struct Inode* child = rmChild(root_inode, path);
+	struct Inode* child = rmChild(path);
 	if(child == NULL){
             return -ENOENT;
         }
