@@ -174,7 +174,7 @@ int fs_touch(const char *path, mode_t mode,
 	
 	
 	addChild(parent, child);
-        return -ENOENT;	     
+    return 0;	     
 }
 
 int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
@@ -198,7 +198,7 @@ int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
 	
 	allocDir(child); // Crea directorio
 	addChild(parent, child);
-        return -ENOENT;	     
+    return 0;	     
 }
 
 int fs_rmdir(const char *path){

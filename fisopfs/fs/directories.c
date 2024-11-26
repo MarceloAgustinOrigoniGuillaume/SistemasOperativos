@@ -21,7 +21,15 @@ static struct DirData def_data;
 
 int allocDir(struct Inode* dir){ // Persona 2
     printf("ALLOC DIR %s\n", dir->name);
-    dir->data = (struct Data *)&def_data;
+    struct DirData *dir_data = malloc(sizeof(struct DirData));
+
+    dir_data->size = 0;
+    dir_data->capacity = INIT_DIR_ENTRIES;
+    for (int i = 0; i < INIT_DIR_ENTRIES; i++) {
+        dir_data->entries[i].inode = NULL;
+    }
+
+    dir->data = (struct Data *) &dir_data;
     return 0;
 }
 
@@ -105,6 +113,19 @@ int addChild(struct Inode* parent, struct Inode* child){ // Persona 2
     return 0;
 }
 
+struct Inode* searchChild(struct Inode* dir, const char* name){
+    struct DirEntries children[INIT_DIR_ENTRIES];
+    readChildren(dir, &children);
+
+    for(int i = 0; i < dir->data->size; i++){
+        if(strcmp(children[i].inode->name, name) == 0){
+            return children[i].inode;
+        }
+    }
+
+    return NULL;
+}
+
 struct Inode* searchRelative(const char* path){ // Persona 2
     printf("LOOK FOR %s\n", path);
 
@@ -122,20 +143,19 @@ struct Inode* searchRelative(const char* path){ // Persona 2
             return current;
         }
 
-        struct DirEntries children[INIT_DIR_ENTRIES];
-        readChildren(current, &children);
-
-        for(int j = 0; j < current->data->size; j++){
-            char *name = children[j].inode->name;
-            if(strcmp(name, directories[i]) == 0){
-                current = children[j].inode;
-                if (name == target) {
-                    free(directories); 
-                    return current;
-                }
-                break;
-            }
+        struct Inode* child = searchChild(current, directories[i]);
+        if (!child) {
+            printf("NOT FOUND %s\n", directories[i]);
+            free(directories);
+            return NULL;
         }
+
+        if (child->name == target) {
+            free(directories);
+            return child;
+        }
+
+        current = child;
     }
 
     printf("WAS NOT EXISTENT? '%s' \n",path);
@@ -161,8 +181,8 @@ struct Inode* searchNew(const char* path, char ** name_child){ // Persona 2
 
     free(directories);
 
+    printf("EN SEARCH NEW VAMOS A BUSCAR %s\n", parent_path);
     struct Inode* parent = searchRelative(parent_path);
-    struct Inode* child = searchRelative(path);
 
     free(parent_path);
 
@@ -172,6 +192,9 @@ struct Inode* searchNew(const char* path, char ** name_child){ // Persona 2
         return NULL;
     }
 
+    printf("EN SEARCH NEW VAMOS A BUSCAR %s\n", target);
+    struct Inode* child = searchChild(parent, target);
+
     if (child) {
         printf("GOT NAME FOR %s %s\n", target, child->name);
         free(target);
@@ -179,6 +202,7 @@ struct Inode* searchNew(const char* path, char ** name_child){ // Persona 2
     }
 
     *name_child = target;
+    free(target);
     return parent;
 }
 
@@ -190,7 +214,6 @@ void readChildren(struct Inode* dir, struct DirEntries* out){ // Persona 2
         }
     }
 }
-
 
 char** split(const char* str, const char* delimiter, int* count) {
     char* temp = strdup(str); 

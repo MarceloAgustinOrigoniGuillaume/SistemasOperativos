@@ -18,12 +18,6 @@ struct DirEntries entries[INIT_DIR_ENTRIES];
 void serializeDirData(int fd_out, const struct DirData* data_out);    // Persona 2/1?
 void deserializeDirData(int fd_in, struct DirData* data);   // Persona 2/1?
 
-// Function to initialize DirData
-void initDirData(struct DirData* dirData, int initialCapacity);
-
-// Function to free DirData
-void freeDirData(struct DirData* dirData);
-
 // Manejo de directorios
 
 // Para buscar desde cierto inodo directorio, puede servir si se da soporte
