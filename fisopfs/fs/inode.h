@@ -4,6 +4,7 @@
 #include <time.h>
 
 typedef int inode_id_t;
+
 struct Data {
    int size;
 };
