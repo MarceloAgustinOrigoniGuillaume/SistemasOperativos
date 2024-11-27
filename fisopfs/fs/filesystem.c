@@ -47,6 +47,28 @@ int fs_getattrs(const char *path, struct stat *st){
      return 0;
 }
 
+int fs_utimens(const char * path, const struct timespec tv[2]){
+    long sec = tv->tv_sec;
+    long nsec = tv->tv_nsec;
+    
+    
+    printf("[debug] fs_utimens FOR '%s' %ld %ld\n",path, sec,nsec);
+    struct Inode* res = searchRelative(path);
+   
+    if(res == NULL){
+        return -ENOENT;
+    }
+    printf("[debug] fs_utimens %s EXISTED UPDATE?!\n",path);
+    res->modified = nsec;
+    res->last_access = nsec;
+    
+    return 0;    
+}
+
+
+
+
+
 int fs_readdir(const char *path,
                 void *buffer,
                 fuse_fill_dir_t filler,
@@ -138,6 +160,16 @@ int fs_readfile(const char *path,
 }
 
 
+int fs_truncate(const char * path, off_t new_size){
+    printf("[debug] fisopfs TRUNCATE/RESIZE '%s' to %ld\n",path, new_size);
+    struct Inode* res = searchRelative(path);
+    if(res == NULL){
+        return -ENOENT;
+    }
+    printf("[debug] RESET DATA TO 0 on '%s'\n",res->name);
+        
+    return 0;
+}
 
 
 int fs_write(const char *path, const char *buf,
@@ -149,9 +181,13 @@ int fs_write(const char *path, const char *buf,
             return -ENOENT;
         }
         
-        writeData(res, buf, off, size);
+	printf("[debug] found for write!\n");
+        int wrote = writeData(res, buf, off, size);
+        if(wrote  <0){
+            return 0; // Deberia retornar el error especifico.
+        }
         
-        return -ENOENT;
+        return wrote;
 }
 
 
