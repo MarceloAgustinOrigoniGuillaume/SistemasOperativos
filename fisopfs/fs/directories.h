@@ -26,7 +26,7 @@ struct Inode* searchRelative(const char* path); // Persona 2
 
 // Busca el padre y retorna el nombre con el cual deberia crearse el nuevo hijo.
 // Si ya existe o no se permite. name_child == NULL
-struct Inode* searchNew(const char* path, char ** name_child); // Persona 2
+struct Inode* searchNew(const char* path, char **name_child); // Persona 2
 
 // Para el ls, lista los hijos en el struct out.
 void readChildren(struct Inode* dir, struct DirEntries* out); // Persona 2

@@ -183,7 +183,7 @@ int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
 	printf("[debug] fisopfs mkdir %s %d\n",
 	       path, mode);
 	       
-	char * name_child = NULL;
+	char *name_child = NULL;
 	struct Inode* parent= searchNew(path, &name_child);
 	
 	if(parent == NULL || name_child == NULL){
@@ -191,13 +191,17 @@ int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
 	}
 	
 	struct Inode* child = createInode(name_child, I_DIR);
-	
+
+	free(name_child);
+
 	if(child == NULL){
 	     return -ENOENT;	     
 	}
 	
 	allocDir(child); // Crea directorio
 	addChild(parent, child);
+
+    printf("Created directory %s !! \n", child->name);
     return 0;	     
 }
 
