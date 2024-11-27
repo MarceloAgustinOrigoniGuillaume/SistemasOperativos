@@ -227,6 +227,7 @@ int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
 	     return -ENOENT;
 	}
 	
+    printf("Creating inode for directory %s\n", name_child);
 	struct Inode* child = createInode(name_child, I_DIR);
 
 	free(name_child);
@@ -235,6 +236,7 @@ int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
 	     return -ENOENT;	     
 	}
 	
+    printf("Allocating directory data for %s\n", child->name);
 	allocDir(child); // Crea directorio
 	addChild(parent, child);
 

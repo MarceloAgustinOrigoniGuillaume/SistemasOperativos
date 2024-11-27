@@ -6,6 +6,8 @@
 
 #define EXIT_FAILURE 1
 #define ROOT_DIR "/"
+#define NULL_CHAR 1
+
 static int exists_def = 0; 
 
 char *strdup(const char *src) {
@@ -142,12 +144,16 @@ struct Inode* searchRelative(const char* path){ // Persona 2
     char **directories = split(path, "/", &count);
     char *target = directories[count - 1];
 
+    printf("COUNT %d\n", count);
+    printf("TARGET %s\n", target);
+
     struct Inode* current = getinode(0);
 
     if (count == 1) {
         return searchChild(current, target);
     } else {
-        for (int i = 1; i < count; i++) {
+        for (int i = 0; i < count; i++) {
+            printf("LOOK FOR %s\n", directories[i]);
             if (current->type != I_DIR) {
                 return current;
             }
@@ -159,8 +165,10 @@ struct Inode* searchRelative(const char* path){ // Persona 2
                 return NULL;
             }
 
-            if (child->name == target) {
+            printf("FOUND %s, TARGET %s\n", child->name, target);
+            if (strcmp(child->name, target) == 0) {
                 free(directories);
+                printf("FOUND %s -> RETURN SEARCH RELATIVE\n", path);
                 return child;
             }
 
@@ -182,12 +190,13 @@ struct Inode* searchNew(const char* path, char **name_child){ // Persona 2
     int count;
     char **directories = split(path, "/", &count);
     char *target = strdup(directories[count - 1]);
-    char *parent_path = malloc(strlen(path) + 1);
+    char *parent_path = malloc(strlen(path) + count + NULL_CHAR);
+    *parent_path = '\0';
 
     if (count == 1) {
         parent_path = strcpy(parent_path, ROOT_DIR);
     } else {
-        parent_path[0] = '\0';
+        //parent_path[0] = '\0';
         for (int i = 0; i < count - 1; i++) {
             strcat(parent_path, "/");
             strcat(parent_path, directories[i]);
