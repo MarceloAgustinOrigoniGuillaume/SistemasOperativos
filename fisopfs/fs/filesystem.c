@@ -27,11 +27,7 @@ void hardcodefs(){
    inode->name = "/";
    inode->type = I_DIR;
    root_inode = inode;
-   
    allocDir(inode);
-   
-   inode = createInode("somefile", I_FILE);
-   allocFile(inode);
 }
 
 int fs_getattrs(const char *path, struct stat *st){
@@ -285,12 +281,13 @@ void* fs_init(struct fuse_conn_info *conn){
 	    hardcodefs();
 	    return NULL;
 	}
+	hardcodefs();
 	
 	deserializeBlocks(&fd);
 	deserializeInodes(&fd);
 
 	closeWriter(&fd);
-	hardcodefs();
+	
 	return NULL;
 }
 

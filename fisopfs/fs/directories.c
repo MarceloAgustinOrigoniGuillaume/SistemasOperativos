@@ -8,7 +8,17 @@
 #define ROOT_DIR "/"
 #define NULL_CHAR 1
 
-static int exists_def = 0; 
+
+void serializeDirData(struct SerialFD* fd_out, const struct DirData* data_out){
+     // No se usa el fd directamente! por tema little endian vs big endian y asi
+     // Para numeros y asi esta los metodos de serial.h!
+     printf("Serialize dir data.. %d size dir: %d\n",fd_out->fd, data_out->size);
+}
+void deserializeDirData(struct SerialFD* fd_in, struct DirData* data){
+     printf("Deserialize dir data.. %d\n",fd_in->fd);
+     data->size = 0;
+}
+
 
 char *strdup(const char *src) {
     size_t len = strlen(src) + 1;
@@ -19,11 +29,9 @@ char *strdup(const char *src) {
     return dst;
 }
 
-static struct DirData def_data;
-
 int allocDir(struct Inode* dir){ // Persona 2
     printf("ALLOC DIR %s\n", dir->name);
-    struct DirData *dir_data = malloc(sizeof(struct DirData));
+    struct DirData *dir_data = (struct DirData *)malloc(sizeof(struct DirData));
 
     dir_data->size = 0;
     dir_data->capacity = INIT_DIR_ENTRIES;
@@ -45,7 +53,7 @@ void freeDir(struct Inode* dir){ // Persona 2
     }
 
     for (int i = 0; i < dir->data->size; i++) {
-        struct DirData *data = dir->data;
+        struct DirData *data = (struct DirData *)dir->data;
         struct Inode* child = data->entries[i].inode;
         if (child) {
             freeDir(child);
@@ -79,7 +87,7 @@ struct Inode* rmChild(const char* path){ // Persona 2
     }
 
     for (int i = 0; i < parent->data->size; i++) {
-        struct DirData *data = parent->data;
+        struct DirData *data = (struct DirData *)parent->data;
         if (data->entries[i].inode == child) { 
             data->entries[i].inode = NULL; 
             data->size--;
@@ -97,7 +105,7 @@ struct Inode* rmChild(const char* path){ // Persona 2
 int addChild(struct Inode* parent, struct Inode* child) { // Persona 2
     printf("ADD CHILD parent %s child: %s\n", parent->name, child->name);
 
-    struct DirData *data = parent->data; // Asegúrate de trabajar con un puntero correcto
+    struct DirData *data = (struct DirData *)parent->data; // Asegúrate de trabajar con un puntero correcto
     if (data->size == data->capacity) {
         perror("No hay espacio para agregar un nuevo hijo");
         return -1;
@@ -120,7 +128,7 @@ int addChild(struct Inode* parent, struct Inode* child) { // Persona 2
 struct Inode* searchChild(struct Inode* dir, const char* name){
     printf("SEARCH CHILD: LOOK FOR %s IN %s\n", name, dir->name);
     struct DirEntries children[dir->data->size];
-    readChildren(dir, &children);
+    readChildren(dir, &children[0]);
 
 
     for(int i = 0; i < dir->data->size; i++){
@@ -228,7 +236,7 @@ struct Inode* searchNew(const char* path, char **name_child){ // Persona 2
 }
 
 void readChildren(struct Inode* dir, struct DirEntries* out){ // Persona 2
-    struct DirData *data = dir->data;
+    struct DirData *data = (struct DirData *)dir->data;
     for (int i = 0; i < data->size; i++) {
         if (data->entries[i].inode) {
             out[i] = data->entries[i];

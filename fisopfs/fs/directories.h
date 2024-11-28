@@ -4,6 +4,7 @@
 #define INIT_DIR_ENTRIES 256
 
 #include "./inode.h"
+#include "./serial.h"
 
 struct DirEntries{
     struct Inode* inode; // id del inodo? o puede ser algo interno.
@@ -15,8 +16,8 @@ struct DirData{ // Persona 2
 struct DirEntries entries[INIT_DIR_ENTRIES];
 };
 
-void serializeDirData(int fd_out, const struct DirData* data_out);    // Persona 2/1?
-void deserializeDirData(int fd_in, struct DirData* data);   // Persona 2/1?
+void serializeDirData(struct SerialFD* fd_out, const struct DirData* data_out);    // Persona 2/1?
+void deserializeDirData(struct SerialFD* fd_in, struct DirData* data);   // Persona 2/1?
 
 // Manejo de directorios
 
