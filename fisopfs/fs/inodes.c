@@ -99,7 +99,7 @@ struct Inode* createInode(const char* name, enum InodeType type) {
     }
     
     memcpy(inode->name, name, count);    
-    *(inode->name+count+1) = 0;
+    *(inode->name+count) = 0;
     
     inode->type = type;
     inode->data = NULL;

@@ -149,7 +149,7 @@ int readStr(struct SerialFD* writer, char** out){
          return ret;
      }
      // Por las dudas
-     *(res+msg_len+1) = 0;
+     *(res+msg_len) = 0;
      *out = (char*)res;
      return 0;
 }
