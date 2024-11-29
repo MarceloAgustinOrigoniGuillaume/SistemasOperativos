@@ -2,6 +2,7 @@
 #define INODE_H
 
 #include <time.h>
+#include <sys/types.h>
 
 typedef int inode_id_t;
 
@@ -28,5 +29,7 @@ struct Inode {
     struct Inode* next;     
 };
 
+
+int setNewName(struct Inode* inode, const char* name);
 
 #endif

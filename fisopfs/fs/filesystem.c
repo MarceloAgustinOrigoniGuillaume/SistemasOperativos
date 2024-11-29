@@ -22,12 +22,6 @@ char *filedisk = DEFAULT_FILE_DISK;
 
 
 void hardcodefs(){
-   struct Inode* inode = &inodes[0];
-   inode->id = 0;
-   inode->name = "/";
-   inode->type = I_DIR;
-   root_inode = inode;
-   allocDir(inode);
 }
 
 int fs_getattrs(const char *path, struct stat *st){
@@ -274,6 +268,9 @@ int fs_unlink(const char* path){
 void* fs_init(struct fuse_conn_info *conn){
 	printf("[debug] fisopfs init from %s\n",filedisk);
 	int err = 0;
+        initInodes();
+        allocDir(root_inode);
+	
 	struct SerialFD fd = openReader(filedisk, &err);
 	
 	if(err != 0){

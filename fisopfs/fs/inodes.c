@@ -14,20 +14,19 @@ void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
 struct Inode* root_inode= NULL;
 static int new_inodo_id = 1;
 
+
+void initInodes(){
+    root_inode = &inodes[0];
+    free_inode = &inodes[1];
+    new_inodo_id = 2;
+    
+    root_inode->id = 0;
+    root_inode->name = "/";
+    root_inode->type = I_DIR;
+}
+
 void statOf(struct Inode* inode, struct stat *st){ // Persona 4
     printf("STAT OF %s!\n",inode->name);
-
-    // if (strcmp(inode->name, "/") == 0) {
-	//     st->st_uid = inode->id;
-	//     st->st_mode = __S_IFDIR | 0755;
-	//     st->st_nlink = 2;
-    // } else if (strcmp(inode->name, "somefile") == 0) {
-	//     st->st_uid = 2;
-	//     st->st_mode = __S_IFREG | 0664;
-	//     st->st_size = inode->data->size;
-	//     st->st_nlink = 1;
-    // }
-
     
     if (inode->type == I_DIR){
         st->st_mode = __S_IFDIR | inode->permissions;
@@ -78,28 +77,18 @@ void deleteInode(struct Inode* inode) {
 
 struct Inode* createInode(const char* name, enum InodeType type) {
     struct Inode* inode;
-    if (free_inode) {
-        inode = free_inode;
-        free_inode = free_inode->next;
-    } else {
-        inode = &inodes[new_inodo_id++];
+    if (free_inode->next == NULL) {
+        free_inode->next= &inodes[new_inodo_id++];
     }
     
-    int count = name? strlen(name) : 0;
-    if(count <= 0){
-       perror("Invalid name for new inode\n");
-       return NULL;
-    }
+    inode = free_inode;
     
-    inode->name = (char *) malloc(sizeof(char) * count+ 1);
-    
-    if (!inode->name) {
-        perror("Failed to allocate memory for inode name\n");
+    if(setNewName(inode, name) != 0){
         return NULL;
     }
     
-    memcpy(inode->name, name, count);    
-    *(inode->name+count) = 0;
+    // Pop del free inode.
+    free_inode= free_inode->next;
     
     inode->type = type;
     inode->data = NULL;

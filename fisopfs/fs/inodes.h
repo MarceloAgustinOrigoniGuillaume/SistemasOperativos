@@ -13,6 +13,7 @@ struct Inode* free_inode;
 struct Inode* root_inode;
 
 
+void initInodes();
 void serializeInodes(struct SerialFD* fd_out);    // Persona 4/1?
 void deserializeInodes(struct SerialFD* fd_in);   // Persona 4/1?
 
