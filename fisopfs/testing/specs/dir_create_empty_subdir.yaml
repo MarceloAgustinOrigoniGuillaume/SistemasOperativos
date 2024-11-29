@@ -2,10 +2,15 @@ name: Create empty subdirectory
 description: "Creates a simple empty subdirectory on a dir on root."
 
 steps:
+ # Arrange
  - do: mkdir {fs}/dir1
    ret: 0
+ 
+ # Do
  - do: mkdir {fs}/dir1/sub
    ret: 0
+ 
+ # Assert
  - do: ls {fs}/dir1
    children:
       - sub

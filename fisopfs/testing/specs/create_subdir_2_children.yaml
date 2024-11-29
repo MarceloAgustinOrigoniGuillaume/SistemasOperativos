@@ -2,16 +2,22 @@ name: Create subdirectory
 description: "Creates a simple subdirectory folder with 3 files."
 
 steps:
+   #Arrange
  - do: mkdir {fs}/dir1
    ret: 0
+   
+   #Do
  - do: mkdir {fs}/dir1/sub
    ret: 0
+   
  - do: touch {fs}/dir1/sub/f1
    ret: 0
  - do: touch {fs}/dir1/sub/f2
    ret: 0
  - do: touch {fs}/dir1/sub/f3
    ret: 0
+   
+   #Assert
  - do: ls {fs}/dir1/sub
    children:
       - f1

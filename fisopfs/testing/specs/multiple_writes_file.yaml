@@ -1,0 +1,15 @@
+name: Write/Read file multiple
+description: "Crea y escribe un archivo con cat > , multiples veces, with append y despues resetea ... luego muestra el mensaje"
+steps:
+ - do: cat > {fs}/file1
+   in: "uno"
+   ret: 0
+ - do: cat >> {fs}/file1
+   in: " dos"
+   ret: 0
+ - do: cat > {fs}/file1
+   in: "tres"
+   ret: 0
+   
+ - do: cat {fs}/file1
+   out: "tres"

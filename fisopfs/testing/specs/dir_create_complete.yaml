@@ -1,4 +1,4 @@
-name: Create complete dir
+name: Create complete root
 description: "Creates a complete, file/dir children on a directory on root."
 
 steps:

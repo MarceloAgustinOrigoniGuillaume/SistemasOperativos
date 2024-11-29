@@ -1,0 +1,34 @@
+name: Remove children from root
+description: "Adds and then removes children to root."
+
+steps:
+   # Arrange
+ - do: mkdir {fs}/dir1
+   ret: 0
+ - do: mkdir {fs}/dir3
+   ret: 0
+ - do: touch {fs}/file2
+   ret: 0
+ - do: touch {fs}/file3
+   ret: 0
+   
+   #do
+ - do: rm {fs}/file3
+   ret: 0
+ - do: rm -r {fs}/dir1
+   ret: 0
+   
+   # Assert
+ - do: ls {fs}/
+   children:
+      - dir3
+      - file2
+      
+ - do: stat {fs}/file2
+   path: "{fs}/file2"
+   type: regular empty file
+   size: 0
+   
+ - do: stat {fs}/dir3
+   path: "{fs}/dir3"
+   type: directory

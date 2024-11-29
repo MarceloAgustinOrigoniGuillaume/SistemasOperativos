@@ -1,0 +1,31 @@
+name: multiple childs on root 
+description: "Adds to root files/dirs."
+
+steps:
+   # Do
+ - do: mkdir {fs}/dir1
+   ret: 0
+ - do: mkdir {fs}/dir3
+   ret: 0
+ - do: touch {fs}/file2
+   ret: 0
+
+   # Assert
+ - do: ls {fs}/
+   children:
+      - dir1
+      - dir3
+      - file2
+      
+ - do: stat {fs}/file2
+   path: "{fs}/file2"
+   type: regular empty file
+   size: 0
+   
+ - do: stat {fs}/dir1
+   path: "{fs}/dir1"
+   type: directory
+   
+ - do: stat {fs}/dir3
+   path: "{fs}/dir3"
+   type: directory

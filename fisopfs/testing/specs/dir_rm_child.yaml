@@ -1,0 +1,37 @@
+name: Create complete dir
+description: "Adds and then removes children to directory on root."
+
+steps:
+   # Arrange
+ - do: mkdir {fs}/main
+   ret: 0
+   
+ - do: mkdir {fs}/main/dir1
+   ret: 0
+ - do: mkdir {fs}/main/dir3
+   ret: 0
+ - do: touch {fs}/main/file2
+   ret: 0
+ - do: touch {fs}/main/file3
+   ret: 0
+   
+   #do
+ - do: rm {fs}/main/file3
+   ret: 0
+ - do: rm -r {fs}/main/dir1
+   ret: 0
+   
+   # Assert
+ - do: ls {fs}/main/
+   children:
+      - dir3
+      - file2
+      
+ - do: stat {fs}/main/file2
+   path: "{fs}/main/file2"
+   type: regular empty file
+   size: 0
+   
+ - do: stat {fs}/main/dir3
+   path: "{fs}/main/dir3"
+   type: directory

@@ -134,6 +134,7 @@ def run_tests(tests):
             fails+= "\n"+msg;
             failed += 1
             umount_fs()
+            #raise e
         finally:
             count += 1
 
@@ -166,7 +167,7 @@ class TestSuccesfulExec:
        return self.command
     def check(self, ret, stdout, stderr):       
        if ret != 0:
-          raise Exception("Check command was succesful failed!")
+          raise Exception("Check "+self.command+" was succesful failed!")
 
 class TestStep:
     def __init__(self, command : str):
@@ -185,7 +186,7 @@ class TestStep:
     
     def check(self, ret, stdout, stderr):       
        if self.ret != None and self.ret != ret:
-          raise Exception("Check ret code failed expected "+self.ret+" was: "+ret)
+          raise Exception("Check '"+self.command+"' expected ret "+str(self.ret)+" was: "+str(ret))
           
        if self.out != None:
           if len(self.out) == 0:
