@@ -1,20 +1,27 @@
 #ifndef DIRECTORIES_H
 #define DIRECTORIES_H
 
-#define INIT_DIR_ENTRIES 256
+#define INIT_DIR_ENTRIES 128
+#define INIT_DIRECTORIES 64
 
 #include "./inode.h"
 #include "./serial.h"
 
-struct DirEntries{
-    struct Inode* inode; // id del inodo? o puede ser algo interno.
-};
 
 struct DirData{ // Persona 2
-   int size; // Campo de Inode Data*, tiene que estar arriba de todo!
+   int size;
    int capacity;
-struct DirEntries entries[INIT_DIR_ENTRIES];
+   int entries_id[INIT_DIR_ENTRIES];
+   
+   
+   int id_dir;
+   struct DirData* next_free;
 };
+
+struct DirData dirarr[INIT_DIRECTORIES];
+
+
+void initDirs();
 
 void serializeDirData(struct SerialFD* fd_out, const struct DirData* data_out);    // Persona 2/1?
 void deserializeDirData(struct SerialFD* fd_in, struct DirData* data);   // Persona 2/1?

@@ -5,28 +5,16 @@
 #include "./serial.h"
 #include <stddef.h>
 
-
-struct FileData{ // Persona 3
-   int size; // Campo del struct Data. Tiene que estar arriba de todo!
-   struct Block* first_block;
-};
+void initBlocks();
 
 void serializeBlocks(struct SerialFD* fd_out);    // Persona 3/1?
 void deserializeBlocks(struct SerialFD* fd_in);   // Persona 3/1?
-
-void serializeFileData(struct SerialFD* fd_out, const struct FileData* data_out);    // Persona 3/1?
-void deserializeFileData(struct SerialFD* fd_in, struct FileData* data);   // Persona 3/1?
-
 
 #define BLOCK_COUNT 512
 
 // Persona 3
 struct Block blocks[BLOCK_COUNT];
-struct Block * first_free;
 
-struct Block * getAndUseFree();// Persona 3
-
-void freeBlock(struct Block * block); // Persona 3
 int allocFile(struct Inode* file); // Persona 3
 
 // Manejo de archivos
@@ -34,5 +22,7 @@ int allocFile(struct Inode* file); // Persona 3
 int writeData(struct Inode* file, const char* buff,  int data_off, size_t count); // Persona 3
 int readData(struct Inode* file, char* buff_out, int data_off, size_t count); // Persona 3
 void freeFile(struct Inode* file); // Persona 3
+
+void truncate(struct Inode* file, int size); // Persona 3
 
 #endif

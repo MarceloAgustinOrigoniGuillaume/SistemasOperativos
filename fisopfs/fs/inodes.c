@@ -14,13 +14,19 @@ void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
 struct Inode* root_inode= NULL;
 static int new_inodo_id = 1;
 
+static struct Inode * setBaseInode(int id){
+    struct Inode * inode = &inodes[id];
+    
+    inode->id = id;    
+    return inode;
+}
+
 
 void initInodes(){
-    root_inode = &inodes[0];
-    free_inode = &inodes[1];
+    root_inode = setBaseInode(0);
+    free_inode = setBaseInode(1);
     new_inodo_id = 2;
     
-    root_inode->id = 0;
     root_inode->name = "/";
     root_inode->type = I_DIR;
 }
@@ -35,7 +41,8 @@ void statOf(struct Inode* inode, struct stat *st){ // Persona 4
     } else {
         st->st_mode = __S_IFREG | inode->permissions;
         st->st_nlink = 1;
-        st->st_size = inode->data ? inode->data->size+10 : 10;
+        
+        st->st_size = inode->size_bytes;
     }
 
     st->st_uid = inode->id;
@@ -58,15 +65,17 @@ void deleteInode(struct Inode* inode) {
     printf("DEL INODE %d\n", inode->id);
 
     free(inode->name);
-    if (inode->data) {
-        free(inode->data);
-    }
+    
     inode->name = NULL;
     inode->type = 0;
-    inode->data = NULL;
+    
+    inode->size_bytes = 0; 
+    inode->blocks = 0;
+    inode->first_block= -1; 
+    
+    
     inode->id = -1;
     inode->permissions = 0;
-    inode->blocks = 0;
     inode->created = 0; 
     inode->modified = 0; 
     inode->last_access = 0;
@@ -78,10 +87,12 @@ void deleteInode(struct Inode* inode) {
 struct Inode* createInode(const char* name, enum InodeType type) {
     struct Inode* inode;
     if (free_inode->next == NULL) {
-        free_inode->next= &inodes[new_inodo_id++];
+      
+        free_inode->next= setBaseInode(new_inodo_id++);
     }
     
     inode = free_inode;
+    printf("FREE INODE WAS %d\n",inode->id);
     
     if(setNewName(inode, name) != 0){
         return NULL;
@@ -91,9 +102,12 @@ struct Inode* createInode(const char* name, enum InodeType type) {
     free_inode= free_inode->next;
     
     inode->type = type;
-    inode->data = NULL;
     inode->permissions = (type == I_DIR) ? 0755 : 0644;
-    inode->blocks = 1;
+    
+    inode->blocks = 0;
+    inode->first_block = NOT_DEFINED_BLOCK;
+    inode->size_bytes = 0; 
+
     inode->created = time(NULL); 
     inode->modified = inode->created; 
     inode->last_access = inode->created; 

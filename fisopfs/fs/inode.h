@@ -6,9 +6,10 @@
 
 typedef int inode_id_t;
 
-struct Data {
-   int size;
-};
+#define NOT_DEFINED_BLOCK -1
+//struct Data {
+//   int size;
+//};
 
 enum InodeType{
    I_FILE = 1,
@@ -20,13 +21,22 @@ struct Inode {
     inode_id_t id;          
     char *name;             
     enum InodeType type;    
-    struct Data *data;      
     int permissions;        
-    int blocks;      
     time_t created;      
     time_t modified;     
     time_t last_access;
-    struct Inode* next;     
+    struct Inode* next;  
+    
+    //struct Data *data;      
+    int blocks;      
+    int first_block;      
+    int size_bytes;      
+    
+};
+
+struct DirEntries{
+     int size;
+     inode_id_t * first;
 };
 
 

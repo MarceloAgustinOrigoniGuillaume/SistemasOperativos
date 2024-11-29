@@ -25,13 +25,15 @@ void hardcodefs(){
 }
 
 int fs_getattrs(const char *path, struct stat *st){
-     printf("[debug] fs_getattr - path: %s\n", path);
+     printf("[debug] -------fs_getattr - path: %s\n", path);
      
      struct Inode* res = searchRelative(path);
      
      if(res == NULL){
+         printf("------> NOT FOUND %s\n",path);
          return -ENOENT;
      }
+     printf("------>FOUND %s\n",path);
      
      statOf(res, st);
      return 0;
@@ -65,37 +67,38 @@ int fs_readdir(const char *path,
                 off_t offset,
                 struct fuse_file_info *fi){
 
-    printf("[debug] fs_readdir - path: %s\n", path);
+    printf("[debug] ----------fs_readdir - path: %s\n", path);
     
     struct Inode* res = searchRelative(path);
     
     if (res == NULL){
-        // Si nos preguntan por el directorio raiz, solo tenemos un archivo
-        if (strcmp(path, "/") == 0) {
-            // Los directorios '.' y '..'
-            filler(buffer, ".", NULL, 0);
-            filler(buffer, "..", NULL, 0);
-            filler(buffer, "fisop", NULL, 0);
-            return 0;
-        }       
+        return -ENOENT;
+    }
+    
+    if(res->type != I_DIR){
+        printf("NOT A DIRECTORY!\n");
         return -ENOENT;
     }
 
+    printf("[debug] ----------FOUND DIR? - path: %s\n", path);
     // Los directorios '.' y '..'
     filler(buffer, ".", NULL, 0);
     filler(buffer, "..", NULL, 0);
 
-    struct DirEntries *children = malloc(sizeof(struct DirEntries*) * res->data->size);
+    struct DirEntries children;;
     
-    readChildren(res, children);
+    readChildren(res, &children);
+    
     struct Inode* child;
-    for(int i = 0; i < res->data->size; i++){
-        child = children[i].inode;
-        filler(buffer, child->name, NULL, 0);
+    for(int i = 0; i < children.size; i++){
+        child = getinode(*(children.first+ i));
+        
+        if(child){
+            filler(buffer, child->name, NULL, 0);
+        }
     }
     
-    free(children);
-
+    free(children.first);
     return 0;
 
 }
@@ -156,8 +159,9 @@ int fs_truncate(const char * path, off_t new_size){
     if(res == NULL){
         return -ENOENT;
     }
+    
     printf("[debug] RESET DATA TO 0 on '%s'\n",res->name);
-        
+    truncate(res, new_size);
     return 0;
 }
 
@@ -201,7 +205,7 @@ int fs_touch(const char *path, mode_t mode,
 	
 	
 	addChild(parent, child);
-    return 0;	     
+	return 0;	     
 }
 
 int fs_mkdir(const char *path, mode_t mode//,struct fuse_file_info *fi
@@ -269,6 +273,10 @@ void* fs_init(struct fuse_conn_info *conn){
 	printf("[debug] fisopfs init from %s\n",filedisk);
 	int err = 0;
         initInodes();
+        initDirs();
+        initBlocks();
+        
+        
         allocDir(root_inode);
 	
 	struct SerialFD fd = openReader(filedisk, &err);

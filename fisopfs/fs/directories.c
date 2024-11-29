@@ -1,5 +1,6 @@
 #include "./directories.h"
 #include "./inodes.h"
+#include "./blocks.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,6 +10,135 @@
 #define NULL_CHAR 1
 
 
+static char* splitLast(char* temp, const char* delimiter, int *ind) {
+    int length = strlen(temp);
+    
+    char * prev = strtok(temp, delimiter);
+    char * last = prev;
+    
+    *ind = -1;
+    
+    while (last != NULL) {
+        printf("FOUND SEG '%s'\n", last);
+        prev = last;
+        last = strtok(NULL, delimiter);
+    }
+    
+    if(prev){
+        printf("FINAL RES IS '%s'\n",prev);
+        
+        *ind = length-strlen(prev);
+        
+    }
+    
+    return prev;
+}
+
+static struct DirData * first_free;
+static int new_dir_id; 
+
+
+static struct DirData * resetDirData(int id){
+    struct DirData * dir = &dirarr[id];
+    
+    dir->id_dir = id;
+    dir->size = 0; // 0 children!
+    dir->next_free = NULL;
+    
+    dir->capacity = INIT_DIR_ENTRIES;
+
+    // Por suerte ya estan en code segment,... no en el heap!
+    for (int i = 0; i < dir->capacity; i++) {
+        dir->entries_id[i] = NOT_DEFINED_BLOCK;
+    }
+    
+    return dir;
+}
+
+static struct DirData * getDirData(int id){
+    if(id < 0 || id >= new_dir_id){
+         return NULL;
+    }
+    
+    return &dirarr[id];
+}
+
+static void freeChildrenData(struct DirData * parent){
+    if(parent == NULL){
+         return;
+    }
+    
+    for (int i = 0; i < parent->size; i++) {
+        struct Inode * child = getinode(parent->entries_id[i]);
+        if(child == NULL){
+            continue; // Por las dudas!
+        }
+        
+        if(child->type == I_DIR){
+             freeDir(child);
+        } else{
+             freeFile(child);
+        }
+        deleteInode(child); // Al ser recursivo hace falta!
+    }
+}
+
+
+
+static void freeDirData(int id){
+    struct DirData * prev_free = first_free;
+    struct DirData * next_free = first_free->next_free;
+    
+    while(next_free){
+        
+        if(prev_free->id_dir < id && next_free->id_dir > id){
+              //Add in between
+              struct DirData * curr = resetDirData(id);
+              prev_free->next_free = curr;
+              curr->next_free = next_free;              
+              return;
+        }
+        
+        next_free = next_free->next_free;
+    }
+    
+    // Se llego al final? por lo que se debe agregar al final como nuevo free
+    prev_free->next_free = resetDirData(id); // Agrega a la lista de frees el bloque curr
+}
+
+static int getFreeDirData(){
+    int id = first_free->id_dir;
+    
+    first_free->size = 0;
+    
+    if(first_free->next_free == NULL){
+         // Check de capacidad?
+         first_free->next_free = resetDirData(new_dir_id++);
+    }
+    
+    first_free = first_free->next_free; // Pop
+    
+    return id;
+}
+
+// Libera al directorio, recursivamente
+void freeDir(struct Inode* dir){ // Persona 2
+    printf("FREEING DIR REC %s blcok: %d\n", dir->name, dir->first_block);
+    
+    struct DirData * data = getDirData(dir->first_block);
+    if(data){
+        freeChildrenData(data); // Recursive free!
+        freeDirData(data->id_dir);
+    }    
+    
+    
+}
+
+
+void initDirs(){
+    first_free = resetDirData(0);
+    new_dir_id = 1;
+}
 void serializeDirData(struct SerialFD* fd_out, const struct DirData* data_out){
      // No se usa el fd directamente! por tema little endian vs big endian y asi
      // Para numeros y asi esta los metodos de serial.h!
@@ -17,6 +147,37 @@ void serializeDirData(struct SerialFD* fd_out, const struct DirData* data_out){
 void deserializeDirData(struct SerialFD* fd_in, struct DirData* data){
      printf("Deserialize dir data.. %d\n",fd_in->fd);
      data->size = 0;
+}
+
+
+static struct Inode* indexChild(struct DirData* dir,int *ind, const char* name){
+    printf("INDEx CHILD: LOOK FOR %s IN %d\n", name, dir->size);
+    *ind = NOT_DEFINED_BLOCK;
+    for (int i = 0; i < dir->capacity; i++) {
+        if(dir->entries_id[i] == NOT_DEFINED_BLOCK){
+            continue;
+        }
+        
+        struct Inode * child = getinode(dir->entries_id[i]);
+        
+        if(child && strcmp(child->name, name) == 0){
+            printf("FOUND %s\n", name);
+            *ind = i;
+            return child;
+        }
+    }    
+    return NULL;
+}
+
+
+char * strndup(const char *src, int count) {
+    size_t len = count + 1;
+    char *dst = malloc(len);
+    if (dst) {
+        memcpy(dst, src, len);
+        *(dst+len) =0;
+    }
+    return dst;
 }
 
 
@@ -31,218 +192,227 @@ char *strdup(const char *src) {
 
 int allocDir(struct Inode* dir){ // Persona 2
     printf("ALLOC DIR %s\n", dir->name);
-    struct DirData *dir_data = (struct DirData *)malloc(sizeof(struct DirData));
+    dir->blocks = 1;
+    dir->size_bytes = 4096;// por default capaz?
+    dir->first_block = getFreeDirData();
 
-    dir_data->size = 0;
-    dir_data->capacity = INIT_DIR_ENTRIES;
-    for (int i = 0; i < INIT_DIR_ENTRIES; i++) {
-        dir_data->entries[i].inode = NULL;
-    }
-
-    dir->data = (struct Data *) dir_data;
     return 0;
 }
 
-// Libera al directorio, recursivamente
-void freeDir(struct Inode* dir){ // Persona 2
-    printf("FREE DIR %s\n", dir->name);
 
-    if (dir->type != I_DIR) {
-        deleteInode(dir);
-        return;
-    }
-
-    for (int i = 0; i < dir->data->size; i++) {
-        struct DirData *data = (struct DirData *)dir->data;
-        struct Inode* child = data->entries[i].inode;
-        if (child) {
-            freeDir(child);
-        }
-    }
-}
 
 // Busca al inodo, y lo remueve del padre. Retorna el inodo hijo. Para su posterior liberacion de hacer falta.
 struct Inode* rmChild(const char* path){ // Persona 2
     printf("RM CHILD root %s \n", path);
 
-    int count;
-    char **directories = split(path, "/", &count);
-    char *parent_path = malloc(strlen(path) + 1);
-    for (int i = 0; i < count - 1; i++) {
-        strcat(parent_path, "/");
-        strcat(parent_path, directories[i]);
-    }
 
+    char * parent_path = strdup(path);
+    int ind = 0;
+    char* last_delim = splitLast(parent_path , "/", &ind);
+    if(last_delim == NULL || strlen(last_delim) == 1){
+        printf("No delim found/invalid name\n");
+        free(parent_path);
+        return NULL;
+    }
+    
+    char * childname = strdup(last_delim);
+    
+    free(parent_path);
+    parent_path = strndup(path, ind-1);
+    
+    printf("Parent is '%s' child '%s'\n", parent_path, childname);
+    
     struct Inode* parent = searchRelative(parent_path);
-    struct Inode* child = searchRelative(path);
-
-    if (!parent) {
-        printf("NO PARENT FOR %s\n", path);
+    if(parent == NULL){
+        printf("Not found parent! '%s'\n", parent_path);
         return NULL;
     }
-
+    
+    struct DirData* data = getDirData(parent->first_block);
+    
+    int index;
+    struct Inode* child = indexChild(data, &index, childname);
+    
     if (!child) {
-        printf("NO CHILD FOR %s\n", path);
+        printf("NO CHILD FOUND ON PARENT %s child '%s'\n", parent_path, childname);
+        free(childname);
+        free(parent_path);
         return NULL;
     }
-
-    for (int i = 0; i < parent->data->size; i++) {
-        struct DirData *data = (struct DirData *)parent->data;
-        if (data->entries[i].inode == child) { 
-            data->entries[i].inode = NULL; 
-            data->size--;
-            return child;
-        }
-    }
-
-    free(directories);
+    
+    
+    data->entries_id[index] = NOT_DEFINED_BLOCK; // RESET
+    data->size--;
+    
+    free(childname);
     free(parent_path);
 
-    return NULL;
+    return child;
 }
 
 // Agrega el inodo hijo como hijo al padre.
 int addChild(struct Inode* parent, struct Inode* child) { // Persona 2
     printf("ADD CHILD parent %s child: %s\n", parent->name, child->name);
 
-    struct DirData *data = (struct DirData *)parent->data; // Asegúrate de trabajar con un puntero correcto
+    struct DirData* data = getDirData(parent->first_block);    
+    
     if (data->size == data->capacity) {
         perror("No hay espacio para agregar un nuevo hijo");
         return -1;
     }
-
-    struct DirEntries* entries = data->entries;
-    for (int i = 0; i < data->capacity; i++) { // Iterar sobre toda la capacidad
-        if (entries[i].inode == NULL) {
-            entries[i].inode = child; // Agregar el hijo
-            data->size++;            // Incrementar el tamaño
+    for (int i = 0; i < data->capacity; i++) {
+        if(data->entries_id[i] == NOT_DEFINED_BLOCK){
+            data->entries_id[i] = child->id;
+            data->size++;
+            printf("SE AGREGO CHILD EN %d id is '%d'\n",i, child->id);
             return 0;
         }
     }
-
+    printf("NO SE AGREGO CHILD \n");
+    
     return -1;
 }
 
 
 
-struct Inode* searchChild(struct Inode* dir, const char* name){
-    printf("SEARCH CHILD: LOOK FOR %s IN %s\n", name, dir->name);
-    struct DirEntries children[dir->data->size];
-    readChildren(dir, &children[0]);
-
-
-    for(int i = 0; i < dir->data->size; i++){
-        if(strcmp(children[i].inode->name, name) == 0){
-            printf("FOUND %s\n", name);
-            return children[i].inode;
+struct Inode* searchChild(struct DirData* dir, const char* name){
+    printf("SEARCH CHILD: LOOK FOR %s IN %d childs\n", name, dir->size);
+    
+    for (int i = 0; i < dir->capacity; i++) {
+        if(dir->entries_id[i] == NOT_DEFINED_BLOCK){
+            continue;
         }
-    }
-
+    
+        struct Inode * child = getinode(dir->entries_id[i]);
+        
+        if(child && strcmp(child->name, name) == 0){
+            printf("-->FOUND '%s'\n", name);
+            return child;
+        } else{
+           if(child){
+              printf("VALID ID?! %d '%s' vs '%s'\n",dir->entries_id[i], child->name, name);
+           } else{
+              printf("INVALID ID?! %d\n",dir->entries_id[i]);
+           }
+        }
+    }    
     return NULL;
 }
 
 struct Inode* searchRelative(const char* path){ // Persona 2
     printf("SEARCH RELATIVE: LOOK FOR %s\n", path);
+    struct Inode* root = getinode(0); // ROOT
 
-    if(strcmp(path, ROOT_DIR) == 0){
-        return getinode(0);
+    if(strlen(path) == 0 || strcmp(path, root->name) == 0){
+        return root;
     }
 
     int count;
     char **directories = split(path, "/", &count);
-    char *target = directories[count - 1];
+    char ** target = &directories[0];
 
     printf("COUNT %d\n", count);
-    printf("TARGET %s\n", target);
-
-    struct Inode* current = getinode(0);
-
-    if (count == 1) {
-        return searchChild(current, target);
-    } else {
-        for (int i = 0; i < count; i++) {
-            printf("LOOK FOR %s\n", directories[i]);
-            if (current->type != I_DIR) {
-                return current;
-            }
-
-            struct Inode* child = searchChild(current, directories[i]);
-            if (!child) {
-                printf("NOT FOUND %s\n", directories[i]);
-                free(directories);
-                return NULL;
-            }
-
-            printf("FOUND %s, TARGET %s\n", child->name, target);
-            if (strcmp(child->name, target) == 0) {
-                free(directories);
-                printf("FOUND %s -> RETURN SEARCH RELATIVE\n", path);
-                return child;
-            }
-
-            current = child;
-        }
+    printf("FIRST TARGET '%s'\n", *target);
+    
+    struct Inode* child = searchChild(getDirData(root->first_block), *target);
+    count--;
+    while(child && count > 0){
+         if(child->type != I_DIR){
+              printf("Segment that was a parent, was not a dir!\n");
+              free(directories);
+              return NULL;
+         }
+         
+         count--;
+         target = target+1; // Anda al siguiente puntero.         
+         child = searchChild(getDirData(child->first_block), *target);
     }
-
-    printf("WAS NOT EXISTENT? '%s' \n",path);
-
+    
     free(directories);
-    return NULL;
+    return child;
 }
-
-char * NAME_DEF = "newfile";
 
 // Retorna el padre! Null si no existe un padre. name_child = Null en caso de que ya exista.
 struct Inode* searchNew(const char* path, char **name_child){ // Persona 2
-    printf("LOOK FOR NEW %s\n", path);
-    int count;
-    char **directories = split(path, "/", &count);
-    char *target = strdup(directories[count - 1]);
-    char *parent_path = malloc(strlen(path) + count + NULL_CHAR);
-    *parent_path = '\0';
+    printf("LOOK FOR NEW '%s'\n", path);
 
-    if (count == 1) {
-        parent_path = strcpy(parent_path, ROOT_DIR);
-    } else {
-        //parent_path[0] = '\0';
-        for (int i = 0; i < count - 1; i++) {
-            strcat(parent_path, "/");
-            strcat(parent_path, directories[i]);
-        }
-    }
-
-    free(directories);
-
-    struct Inode* parent = searchRelative(parent_path);
-
-    free(parent_path);
-
-    if (!parent) {
-        printf("NO PARENT FOR %s\n", path);
-        free(target);
+    char * parent_path = strdup(path);
+    int ind = -1;
+    char* last_delim = splitLast(parent_path , "/", &ind);
+    if(last_delim == NULL || strlen(last_delim) == 1){
+        printf("No delim found/invalid name\n");
+        free(parent_path);
         return NULL;
     }
-
-    struct Inode* child = searchChild(parent, target);
-
-    if (child) {
-        printf("GOT NAME FOR %s %s\n", target, child->name);
-        free(target);
+    
+    char * childname = strdup(last_delim);
+    printf("Parent bfr is '%s' child '%s' %d\n", parent_path, childname,ind);
+    
+    free(parent_path);
+    parent_path = strndup(path, ind-1);
+    
+    printf("Parent is '%s' child '%s'\n", parent_path, childname);
+    
+    //char **directories = split(path, "/", &count);
+    //char *parent_path = malloc(strlen(path) + 1);
+    //for (int i = 0; i < count - 1; i++) {
+    //    strcat(parent_path, "/");
+    //    strcat(parent_path, directories[i]);
+    //}
+    
+    struct Inode* parent = searchRelative(parent_path);
+    
+    if(parent == NULL){
+        printf("NOT FOUND PARENT FOR NEW! %s\n", parent_path);
+        free(childname);
+        free(parent_path);
+        
+        return NULL;    
+    }
+    
+    struct DirData* data = getDirData(parent->first_block);
+    struct Inode* child = searchChild(data, childname);
+    if(child){
+        *name_child = NULL;
+        printf("ALREADY EXISTED ON %s '%s'\n", parent_path, childname);
+        free(childname);
+        free(parent_path);
+        
         return parent;
     }
-
-    *name_child = strdup(target);
+    
+    *name_child = strdup(childname);
+    
+    free(childname);
+    free(parent_path);
+    
     return parent;
 }
 
 void readChildren(struct Inode* dir, struct DirEntries* out){ // Persona 2
-    struct DirData *data = (struct DirData *)dir->data;
-    for (int i = 0; i < data->size; i++) {
-        if (data->entries[i].inode) {
-            out[i] = data->entries[i];
-        }
+    
+    struct DirData* data = getDirData(dir->first_block);
+    
+    if(data == NULL){
+        out->size = 0;
+        return;
     }
+    out->size = data->size;
+    out->first = (inode_id_t*) malloc(sizeof(inode_id_t) * data->size);
+    
+    inode_id_t* curr = out->first;
+    
+    for (int i = 0; i < data->capacity; i++) {
+        if(data->entries_id[i]< 0){
+             continue;
+        }
+        
+        *curr = data->entries_id[i];
+        curr = curr+1; // Next! 
+    }   
 }
+
+
 
 char** split(const char* str, const char* delimiter, int* count) {
     char* temp = strdup(str); 
