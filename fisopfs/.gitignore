@@ -2,3 +2,4 @@ fisopfs
 *.o
 dbg_*
 persistence_file.fisopfs
+test_serial*.fisopfs

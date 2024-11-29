@@ -12,6 +12,7 @@ from os.path import isfile, join
 from yaml.loader import SafeLoader
 from subprocess import Popen, PIPE, STDOUT
 from termcolor import cprint
+import threading
 
 GIVEN = "given"
 
@@ -26,12 +27,15 @@ EXPR_MOUNT = "{fs}/"
 fs_binary = "./fisopfs" # default
 reflector_binary = "testing/reflector" #default
 mount_point = "prueba/" # default
+out_serial = "test_serial.fisopfs" # default
 
 def mount_normal_fs():
     p= Popen("mkdir "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
-    p.communicate()
+    (stdout, stderr) = p.communicate()    
     if p.returncode != 0:
-       raise Exception("Failed mount of filesystem!")
+       print("----createdir stdout:\n",str(stdout))
+       print("----createdir stderr:\n",str(stderr))
+       raise Exception("Failed create of dir!!")
 
 def unmount_normal_fs():
     p= Popen("rm -r "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
@@ -40,10 +44,39 @@ def unmount_normal_fs():
        raise Exception("Failed umount of filesystem!")
 
 
+def get_comm():
+    return fs_binary+" --filedisk "+out_serial+" -f "+mount_point
+
+def fs_wait(process):
+    (stdout, stderr) = process.communicate()
+    if process.returncode != 0:
+       print("Mounting command:",get_comm())
+       print("----mount out:")
+       print(stdout.decode())
+       print("----mount err:")
+       print(stderr.decode())
+       
+       raise Exception("Failed mount of filesystem!")
+       
+
 def mount_fs():
-    mount_normal_fs();
+    mount_normal_fs()
+    
+    return Popen(get_comm(), stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
 
 def umount_fs():
+    comm = "umount "+mount_point
+    p= Popen(comm, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
+    (stdout, stderr) = p.communicate()
+    if p.returncode != 0:
+       print("Unmounting command:",comm)
+       
+       print("----unmount out:")
+       print(stdout.decode())
+       print("----unmount err:")
+       print(stderr.decode())
+       raise Exception("Failed umount of filesystem!")
+
     unmount_normal_fs();
 
 
@@ -118,15 +151,19 @@ def run_tests(tests):
     total = len(tests)
     
     fails = "";
-
+    thread_fs = None
+    
     for test_path in tests:
         test = FilesystemTest(test_path)#, subs_map)
+        proc = mount_fs()
         
-        mount_fs()
+        thread_fs = threading.Thread(target = fs_wait, args = (proc,)) 
+        thread_fs.start()
         
         try:
             test.run()
             umount_fs()
+            thread_fs.join()
             cprint("PASS {}/{}: {} ({})\n".format(count, total, test.description, test.name), "green")
         except Exception as e:
             msg = "FAIL {}/{}: {} ({}). Exception ocurred: {}".format(count, total, test.description, test.name, e);
@@ -134,6 +171,7 @@ def run_tests(tests):
             fails+= "\n"+msg;
             failed += 1
             umount_fs()
+            thread_fs.join()
             #raise e
         finally:
             count += 1
