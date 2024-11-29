@@ -24,12 +24,17 @@ IN = "in"
 
 EXPR_MOUNT = "{fs}/"
 
+FAIL_FAST = True
+
 fs_binary = "./fisopfs" # default
 reflector_binary = "testing/reflector" #default
 mount_point = "prueba/" # default
 out_serial = "test_serial.fisopfs" # default
 
 def mount_normal_fs():
+    if os.path.exists(mount_point):
+       os.rmdir(mount_point) # por las dudas
+    
     p= Popen("mkdir "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
     (stdout, stderr) = p.communicate()    
     if p.returncode != 0:
@@ -52,9 +57,9 @@ def fs_wait(process):
     if process.returncode != 0:
        print("Mounting command:",get_comm())
        print("----mount out:")
-       print(stdout.decode())
+       print(stdout.decode()if stdout else "NONE!")
        print("----mount err:")
-       print(stderr.decode())
+       print(stderr.decode()if stderr else "NONE!")
        
        raise Exception("Failed mount of filesystem!")
        
@@ -72,9 +77,9 @@ def umount_fs():
        print("Unmounting command:",comm)
        
        print("----unmount out:")
-       print(stdout.decode())
+       print(stdout.decode()if stdout else "NONE!")
        print("----unmount err:")
-       print(stderr.decode())
+       print(stderr.decode() if stderr else "NONE!")
        raise Exception("Failed umount of filesystem!")
 
     unmount_normal_fs();
@@ -121,6 +126,7 @@ class FilesystemTest():
         self.description = data['description']
         self.givens = ""
         self.steps = []
+        self.executed = ""
         if not STEPS in data:
             print("Invalid fs test!")
             return
@@ -135,12 +141,14 @@ class FilesystemTest():
         if(self.givens != ""):
             print("Given:",self.givens, "\n------\n")
             
+        self.executed = "-->run commands:\n"+get_comm() # Commands executed reset
         for step in self.steps:
+            self.executed+= "\n"+step.command;
             launch_step(step)
             
             
 def run_tests(tests):
-
+    
     #tempdir = tempfile.mkdtemp(suffix='-fs-test')
 
     # Sort for consistent ordering
@@ -169,10 +177,13 @@ def run_tests(tests):
             msg = "FAIL {}/{}: {} ({}). Exception ocurred: {}".format(count, total, test.description, test.name, e);
             cprint(msg, "red")
             fails+= "\n"+msg;
+            fails+= test.executed;
             failed += 1
             umount_fs()
             thread_fs.join()
-            #raise e
+            if FAIL_FAST:
+               print(test.executed)
+               raise e
         finally:
             count += 1
 
@@ -253,14 +264,16 @@ class LsStep(TestStep):
     
     def check(self, ret, stdout, stderr):
        super().check(ret, stdout, stderr)
-       res = stdout.decode()
        
        if(len(self.exp_children) == 0):
-           if(res != None and res != ""):
+           res = stdout.decode() if stdout else ""
+           if(res != "" and res != None):
                raise Exception("Expected no children! for ls but there was output from ls! '"+res+"'")
            return
-       if(res == None):
+           
+       if(stdout == None):
            raise Exception("Expected children! none on ls out")
+       res = stdout.decode()
        
        itms = res.split("\n")[0:-1] # There is a final '' item.
        
