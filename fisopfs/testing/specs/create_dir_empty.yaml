@@ -1,0 +1,7 @@
+name: Create directory
+description: "Creates an empty directory on root folder."
+
+steps:
+ - do: mkdir {fs}/dir1
+   ret: 0
+ - do: ls {fs}/dir1 #default es que si no se dice nada el out == none

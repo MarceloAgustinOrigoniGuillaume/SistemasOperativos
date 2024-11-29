@@ -1,7 +1,5 @@
 name: Write/Read file
-description: "Given a file on root folder writes and reads content"
-given:
- - touch {fs}/file1
+description: "Crea y escribe un archivo con cat > ... y luego muestra el mensaje"
 steps:
  - do: cat > {fs}/file1
    in: "uno"

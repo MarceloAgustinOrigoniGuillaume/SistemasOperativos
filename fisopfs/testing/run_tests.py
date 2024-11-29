@@ -25,6 +25,33 @@ EXPR_MOUNT = "{fs}/"
 
 fs_binary = "./fisopfs" # default
 reflector_binary = "testing/reflector" #default
+mount_point = "prueba/" # default
+
+def mount_normal_fs():
+    p= Popen("mkdir "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
+    p.communicate()
+    if p.returncode != 0:
+       raise Exception("Failed mount of filesystem!")
+
+def unmount_normal_fs():
+    p= Popen("rm -r "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
+    p.communicate()
+    if p.returncode != 0:
+       raise Exception("Failed umount of filesystem!")
+
+
+def mount_fs():
+    mount_normal_fs();
+
+def umount_fs():
+    unmount_normal_fs();
+
+
+
+
+
+
+
 
 def compare_strings(current, expected):
     if current != expected:
@@ -40,17 +67,6 @@ def compare_strings(current, expected):
         return message
     return None
 
-def mount_fs():
-    p= Popen("mkdir "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
-    p.communicate()
-    if p.returncode != 0:
-       raise Exception("Failed mount of filesystem!")
-
-def umount_fs(fs_popen):
-    p= Popen("rm -r "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
-    p.communicate()
-    if p.returncode != 0:
-       raise Exception("Failed umount of filesystem!")
 
 def launch_step(step):
     print("->run:",step)
@@ -98,6 +114,8 @@ def run_tests(tests):
     count = 1
     failed = 0
     total = len(tests)
+    
+    fails = "";
 
     for test_path in tests:
         test = FilesystemTest(test_path)#, subs_map)
@@ -109,14 +127,18 @@ def run_tests(tests):
             umount_fs()
             cprint("PASS {}/{}: {} ({})".format(count, total, test.description, test.name), "green")
         except Exception as e:
-            cprint("FAIL {}/{}: {} ({}). Exception ocurred: {}".format(count, total, test.description, test.name, e), "red")
+            msg = "FAIL {}/{}: {} ({}). Exception ocurred: {}".format(count, total, test.description, test.name, e);
+            cprint(msg, "red")
+            fails+= "\n"+msg;
             failed += 1
             umount_fs()
         finally:
             count += 1
 
     cprint("{} out of {} tests passed".format(total - failed, total), "yellow" if failed else "green")
-
+    if fails != "":
+        cprint("Summary of errors:")
+        cprint(fails, "red")
     #shutil.rmtree(tempdir)
 
 def run_all_tests():
@@ -184,7 +206,7 @@ class LsStep(TestStep):
     def __init__(self, item, command):
        super().__init__(item, command)
        self.exp_children = []
-       for child in item[CHILDREN]:
+       for child in item.get(CHILDREN, []):
            self.exp_children.append(str(child))
        
     
@@ -193,8 +215,8 @@ class LsStep(TestStep):
        res = stdout.decode()
        
        if(len(self.exp_children) == 0):
-           if(res != None):
-               raise Exception("Expected no children! for ls")
+           if(res != None and res != ""):
+               raise Exception("Expected no children! for ls but there was output from ls! '"+res+"'")
            return
        if(res == None):
            raise Exception("Expected children! none on ls out")

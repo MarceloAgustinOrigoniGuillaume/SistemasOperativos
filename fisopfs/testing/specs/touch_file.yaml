@@ -1,0 +1,6 @@
+name: Touch file
+description: "Touch de file en la carpeta root. Solo se verifica que se haga correcto y devuelva 0."
+
+steps:
+ - do: touch {fs}/file1
+   ret: 0

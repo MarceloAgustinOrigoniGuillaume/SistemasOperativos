@@ -1,5 +1,5 @@
 name: Create directory
-description: "Creates a simple directory on root folder."
+description: "Creates a simple directory on root folder with 2 files."
 
 steps:
  - do: mkdir {fs}/dir1
@@ -11,4 +11,4 @@ steps:
  - do: ls {fs}/dir1
    children:
       - f1
-      - f3
+      - f2
