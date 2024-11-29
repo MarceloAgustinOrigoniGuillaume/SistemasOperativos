@@ -1,0 +1,17 @@
+name: Write/Read file subfile
+description: "Crea y escribe un archivo con cat > ... y luego muestra el mensaje en subfile!"
+steps:
+ # Arrange
+ - do: mkdir {fs}/dir1
+   ret: 0
+ 
+ # Do
+ - do: touch {fs}/dir1/file1
+   ret: 0
+ - do: cat > {fs}/dir1/file1
+   in: "un mensaje mas y nada mas\nlinea2"
+   ret: 0
+ 
+ #Assert
+ - do: cat {fs}/dir1/file1
+   out: "un mensaje mas y nada mas\nlinea2"

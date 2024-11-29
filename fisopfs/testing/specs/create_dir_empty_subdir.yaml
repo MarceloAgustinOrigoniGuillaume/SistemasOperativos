@@ -1,0 +1,11 @@
+name: Create empty subdirectory
+description: "Creates a simple empty subdirectory on a dir on root."
+
+steps:
+ - do: mkdir {fs}/dir1
+   ret: 0
+ - do: mkdir {fs}/dir1/sub
+   ret: 0
+ - do: ls {fs}/dir1
+   children:
+      - sub

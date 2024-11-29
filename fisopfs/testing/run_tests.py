@@ -99,7 +99,9 @@ class FilesystemTest():
             self.steps.append(resolve_step(itm))
         
     def run(self):
-        print("Given:",self.givens, "\n------\n")
+        if(self.givens != ""):
+            print("Given:",self.givens, "\n------\n")
+            
         for step in self.steps:
             launch_step(step)
             
@@ -125,7 +127,7 @@ def run_tests(tests):
         try:
             test.run()
             umount_fs()
-            cprint("PASS {}/{}: {} ({})".format(count, total, test.description, test.name), "green")
+            cprint("PASS {}/{}: {} ({})\n".format(count, total, test.description, test.name), "green")
         except Exception as e:
             msg = "FAIL {}/{}: {} ({}). Exception ocurred: {}".format(count, total, test.description, test.name, e);
             cprint(msg, "red")
@@ -310,7 +312,7 @@ def resolve_step(item):
     
     command = action.split(" ", 2)[0]
     if command in special_commands:
-       print(command, "WAS special")
+       #print(command, "WAS special")
        return special_commands[command](item,action)
     
     return TestStep(item, action)

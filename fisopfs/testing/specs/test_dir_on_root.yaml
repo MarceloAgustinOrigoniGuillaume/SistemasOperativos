@@ -1,0 +1,36 @@
+name: Create complete dir
+description: "Creates a complete, file/dir children on a directory on root."
+
+steps:
+   # Arrange
+ - do: mkdir {fs}/dir1
+   ret: 0
+   
+   # Do
+ - do: mkdir {fs}/dir1/sub
+   ret: 0
+ - do: touch {fs}/dir1/file1
+   ret: 0
+ - do: touch {fs}/dir1/file2
+   ret: 0
+   
+   # Assert
+ - do: ls {fs}/dir1
+   children:
+      - sub
+      - file1
+      - file2
+      
+ - do: stat {fs}/dir1/file1
+   path: "{fs}/dir1/file1"
+   type: regular empty file
+   size: 0
+   
+ - do: stat {fs}/dir1/file2
+   path: "{fs}/dir1/file2"
+   type: regular empty file
+   size: 0
+   
+ - do: stat {fs}/dir1/sub
+   path: "{fs}/dir1/sub"
+   type: directory

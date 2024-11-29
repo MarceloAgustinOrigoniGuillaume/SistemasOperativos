@@ -5,3 +5,6 @@ steps:
  - do: mkdir {fs}/dir1
    ret: 0
  - do: ls {fs}/dir1 #default es que si no se dice nada el out == none
+ - do: stat {fs}/dir1
+   path: "{fs}/dir1"
+   type: directory
