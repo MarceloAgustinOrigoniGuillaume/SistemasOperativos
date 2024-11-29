@@ -12,7 +12,7 @@ from os.path import isfile, join
 from yaml.loader import SafeLoader
 from subprocess import Popen, PIPE, STDOUT
 from termcolor import cprint
-import threading
+import threading,shutil
 
 GIVEN = "given"
 
@@ -33,7 +33,7 @@ out_serial = "test_serial.fisopfs" # default
 
 def mount_normal_fs():
     if os.path.exists(mount_point):
-       os.rmdir(mount_point) # por las dudas
+       shutil.rmtree(mount_point) # por las dudas
     
     p= Popen("mkdir "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
     (stdout, stderr) = p.communicate()    
@@ -358,7 +358,7 @@ class StatStep(TestStep):
        
           
     def __repr__(self):
-        return "stat: "+self.command
+        return self.command
        
 def resolve_step(item):
     action = item[DO]
