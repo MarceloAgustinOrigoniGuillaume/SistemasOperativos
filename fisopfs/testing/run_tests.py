@@ -24,7 +24,7 @@ IN = "in"
 
 EXPR_MOUNT = "{fs}/"
 
-FAIL_FAST = True
+FAIL_FAST = False
 
 fs_binary = "./fisopfs" # default
 reflector_binary = "testing/reflector" #default
@@ -107,7 +107,7 @@ def compare_strings(current, expected):
 
 
 def launch_step(step):
-    print("->run:",step)
+    print(step)
     p = Popen(step.command, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
     
     if step.stdin:
@@ -140,10 +140,11 @@ class FilesystemTest():
     def run(self):
         if(self.givens != ""):
             print("Given:",self.givens, "\n------\n")
-            
-        self.executed = "-->run commands:\n"+get_comm() # Commands executed reset
+        
+        print(get_comm())
+        self.executed = ""#"-->run commands:\n"+get_comm() # Commands executed reset
         for step in self.steps:
-            self.executed+= "\n"+step.command;
+            #self.executed+= "\n"+step.command;
             launch_step(step)
             
             

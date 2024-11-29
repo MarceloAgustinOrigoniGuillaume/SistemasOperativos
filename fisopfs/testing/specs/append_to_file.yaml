@@ -1,4 +1,4 @@
-name: Write/Read file multiple
+name: Write/Read file append
 description: "Crea y escribe un archivo con cat > , multiples veces, with append... y luego muestra el mensaje"
 steps:
  - do: cat > {fs}/file1
