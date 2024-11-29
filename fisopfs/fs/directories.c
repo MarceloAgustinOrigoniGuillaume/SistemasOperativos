@@ -139,14 +139,13 @@ void initDirs(){
     first_free = resetDirData(0);
     new_dir_id = 1;
 }
-void serializeDirData(struct SerialFD* fd_out, const struct DirData* data_out){
+void serializeDirs(struct SerialFD* fd_out){
      // No se usa el fd directamente! por tema little endian vs big endian y asi
      // Para numeros y asi esta los metodos de serial.h!
-     printf("Serialize dir data.. %d size dir: %d\n",fd_out->fd, data_out->size);
+     printf("Serialize dirs data.. %d size dirs: %d\n",fd_out->fd, new_dir_id);
 }
-void deserializeDirData(struct SerialFD* fd_in, struct DirData* data){
-     printf("Deserialize dir data.. %d\n",fd_in->fd);
-     data->size = 0;
+void deserializeDirs(struct SerialFD* fd_in){
+     printf("Deserialize dirs data.. %d\n",fd_in->fd);
 }
 
 

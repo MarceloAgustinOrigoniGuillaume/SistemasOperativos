@@ -290,6 +290,7 @@ void* fs_init(struct fuse_conn_info *conn){
 	
 	deserializeBlocks(&fd);
 	deserializeInodes(&fd);
+	deserializeDirs(&fd);
 
 	closeWriter(&fd);
 	
@@ -308,6 +309,7 @@ void fs_destroy(){
 	
 	serializeBlocks(&fd);
 	serializeInodes(&fd);
+	serializeDirs(&fd);
 	
 	closeWriter(&fd);
 }

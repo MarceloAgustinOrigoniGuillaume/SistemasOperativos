@@ -23,9 +23,11 @@ struct DirData dirarr[INIT_DIRECTORIES];
 
 void initDirs();
 
-void serializeDirData(struct SerialFD* fd_out, const struct DirData* data_out);    // Persona 2/1?
-void deserializeDirData(struct SerialFD* fd_in, struct DirData* data);   // Persona 2/1?
 
+void serializeDirs(struct SerialFD* fd_out);    // Persona 3/1?
+void deserializeDirs(struct SerialFD* fd_in);   // Persona 3/1?
+
+#define BLOCK_COUNT 512
 // Manejo de directorios
 
 // Para buscar desde cierto inodo directorio, puede servir si se da soporte
