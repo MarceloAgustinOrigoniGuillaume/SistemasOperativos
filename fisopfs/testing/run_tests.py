@@ -15,6 +15,14 @@ from subprocess import Popen, PIPE, STDOUT
 from termcolor import cprint
 import threading,shutil
 
+
+TIME_BETWEEN_STEPS = 80 #MS 
+TIME_BETWEEN_STEPS = TIME_BETWEEN_STEPS/1000 #Sec
+
+TIME_BETWEEN_MOUNTS = 500 #MS 
+TIME_BETWEEN_MOUNTS = TIME_BETWEEN_MOUNTS/1000 #Sec
+
+
 GIVEN = "given"
 
 
@@ -57,9 +65,7 @@ def write_err_to(name, content):
 def mount_normal_fs():
     if os.path.exists(mount_point):
        shutil.rmtree(mount_point) # por las dudas
-    if os.path.exists(out_serial):
-       os.remove(out_serial) # por las dudas
-       
+
     p= Popen("mkdir "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
     (stdout, stderr) = p.communicate()    
     if p.returncode != 0:
@@ -138,7 +144,7 @@ def launch_step(step):
     else:
         (stdout, stderr) = p.communicate(timeout=100)        
     step.check(p.returncode, stdout, stderr)
-    time.sleep(0.1)
+    time.sleep(TIME_BETWEEN_STEPS)
 
 class FilesystemTest():
     def __init__(self, filepath: str):
@@ -179,7 +185,7 @@ class FilesystemTest():
     def mount_command(self):
         return fs_binary+" --filedisk "+self.serial_file+" -f "+mount_point
     
-    def mount(self):
+    def mount(self):               
         comm = self.mount_command()
         print(comm)
         proc = mount_fs(comm)
@@ -211,8 +217,12 @@ class FilesystemTest():
 
 
 def run_test(test):
+    if os.path.exists(test.serial_file):
+         print("----> CLEAN SERIAL FILE",test.serial_file)
+         os.remove(test.serial_file) # por las dudas
+    
     print("----> WAIT BEFORE MOUNT AGAIN!")
-    time.sleep(1)
+    time.sleep(TIME_BETWEEN_MOUNTS)
     test.mount()
     
     ind = test.run()
@@ -223,7 +233,7 @@ def run_test(test):
     
     while(ind >=0):
         print("----> WAIT BEFORE MOUNT AGAIN!")
-        time.sleep(1)
+        time.sleep(TIME_BETWEEN_MOUNTS)
         
         test.mount()
         ind = test.rerun(ind)        
