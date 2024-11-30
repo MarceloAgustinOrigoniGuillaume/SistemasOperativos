@@ -248,7 +248,7 @@ def run_tests(tests):
                 fails+= "\n"+msg;
                 failed += 1
                 write_out_to(test.name,test.fs_out)
-                write_err_to(test.name,test.fs_out)
+                write_err_to(test.name,test.fs_err)
             
             cprint("PASS {}/{}: {} ({})\n".format(count, total, test.description, test.name), "green")
         except Exception as e:
@@ -261,7 +261,7 @@ def run_tests(tests):
             test.unmount()
             
             write_out_to(test.name,test.fs_out)
-            write_err_to(test.name,test.fs_out)
+            write_err_to(test.name,test.fs_err)
             
             if FAIL_FAST:
                raise e
