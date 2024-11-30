@@ -1,0 +1,57 @@
+name: Complete Serialize
+description: "Creates a complete system. Y lo serializa/deserializa"
+
+steps:
+   # Arrange
+ - do: mkdir {fs}/dir1
+   ret: 0
+ - do: mkdir {fs}/dir1/sub
+   ret: 0
+ - do: touch {fs}/dir1/file1
+   ret: 0
+ - do: touch {fs}/dir1/file2
+   ret: 0
+ - do: mkdir {fs}/dir1/sub/d1
+   ret: 0
+ - do: touch {fs}/dir1/sub/d1/fend
+   ret: 0
+   
+ - do: cat > {fs}/dir1/sub/d1/fend
+   in: "CONTENIDO\nY MAS\nMAS\n"
+   ret: 0
+   
+   
+   # Serial
+ - do: serialize
+ 
+   # Assert
+ - do: ls {fs}/dir1
+   children:
+      - sub
+      - file1
+      - file2
+      
+ - do: stat {fs}/dir1/file1
+   path: "{fs}/dir1/file1"
+   type: regular empty file
+   size: 0
+   
+ - do: stat {fs}/dir1/file2
+   path: "{fs}/dir1/file2"
+   type: regular empty file
+   size: 0
+   
+ - do: stat {fs}/dir1/sub
+   path: "{fs}/dir1/sub"
+   type: directory
+ - do: ls {fs}/dir1/sub
+   children:
+      - d1
+ - do: ls {fs}/dir1/sub/d1
+   children:
+      - fend
+ - do: cat {fs}/dir1/sub/d1/fend
+   out: "CONTENIDO\nY MAS\nMAS\n"
+   ret: 0
+
+   

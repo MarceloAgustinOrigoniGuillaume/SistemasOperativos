@@ -16,6 +16,8 @@ import threading,shutil
 
 GIVEN = "given"
 
+
+RESET_MARK = "serialize"
 STEPS = "steps"
 DO = "do"
 RET = "ret"
@@ -25,6 +27,7 @@ IN = "in"
 EXPR_MOUNT = "{fs}/"
 
 FAIL_FAST = False
+SHOW_LOG_FS = False
 
 fs_binary = "./fisopfs" # default
 reflector_binary = "testing/reflector" #default
@@ -55,19 +58,21 @@ def get_comm():
 def fs_wait(process):
     (stdout, stderr) = process.communicate()
     if process.returncode != 0:
-       print("Mounting command:",get_comm())
        print("----mount out:")
        print(stdout.decode()if stdout else "NONE!")
        print("----mount err:")
        print(stderr.decode()if stderr else "NONE!")
-       
-       raise Exception("Failed mount of filesystem!")
+       return
+    
+    if SHOW_LOG_FS:
+       print("----mount out:")
+       print(stdout.decode()if stdout else "NONE!")
        
 
-def mount_fs():
+def mount_fs(command):
     mount_normal_fs()
     
-    return Popen(get_comm(), stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
+    return Popen(command, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
 
 def umount_fs():
     comm = "umount "+mount_point
@@ -80,7 +85,7 @@ def umount_fs():
        print(stdout.decode()if stdout else "NONE!")
        print("----unmount err:")
        print(stderr.decode() if stderr else "NONE!")
-       raise Exception("Failed umount of filesystem!")
+       #raise Exception("Failed umount of filesystem!")
 
     unmount_normal_fs();
 
@@ -126,7 +131,11 @@ class FilesystemTest():
         self.description = data['description']
         self.givens = ""
         self.steps = []
-        self.executed = ""
+        self.breakpoint = -1
+        
+        self.thread_fs = None
+        self.serial_file = data.get('serial_file', out_serial)
+        
         if not STEPS in data:
             print("Invalid fs test!")
             return
@@ -135,18 +144,57 @@ class FilesystemTest():
             self.givens = "\n".join(data[GIVEN])
         
         for itm in data[STEPS]:
-            self.steps.append(resolve_step(itm))
-        
-    def run(self):
-        if(self.givens != ""):
-            print("Given:",self.givens, "\n------\n")
-        
-        print(get_comm())
-        self.executed = ""#"-->run commands:\n"+get_comm() # Commands executed reset
-        for step in self.steps:
-            #self.executed+= "\n"+step.command;
-            launch_step(step)
+            action = itm.get(DO, None)
+            if(action == None):
+               continue
+            if action == RESET_MARK:
+               self.breakpoint = len(self.steps)
+               continue
             
+            self.steps.append(resolve_step(action, itm))
+    
+    def mount_command(self):
+        return fs_binary+" --filedisk "+self.serial_file+" -f "+mount_point
+    
+    def mount(self):
+        comm = self.mount_command()
+        print(comm)
+        proc = mount_fs(comm)
+        proc.poll()
+        self.thread_fs = threading.Thread(target = fs_wait, args = (proc,)) 
+        self.thread_fs.start()
+    
+    def unmount(self):
+        umount_fs()
+        self.thread_fs.join()
+        
+
+    def rerun(self, ind ):
+        launch_step(self.steps[ind])
+        return self.run(ind+1)
+        
+    def run(self, first = 0):        
+        curr = first
+        for step in self.steps[first:]:
+            if(self.breakpoint == curr):
+                print("SERIALIZE!!!!")
+                return curr
+            launch_step(step)
+            curr+=1
+        
+        return -1
+
+
+def run_test(test):
+    test.mount()
+    
+    ind = test.run()        
+    test.unmount()
+    while(ind >=0):
+        test.mount()
+        ind = test.rerun(ind)        
+        test.unmount()
+
             
 def run_tests(tests):
     
@@ -160,30 +208,19 @@ def run_tests(tests):
     total = len(tests)
     
     fails = "";
-    thread_fs = None
     
     for test_path in tests:
         test = FilesystemTest(test_path)#, subs_map)
-        proc = mount_fs()
-        
-        thread_fs = threading.Thread(target = fs_wait, args = (proc,)) 
-        thread_fs.start()
-        
         try:
-            test.run()
-            umount_fs()
-            thread_fs.join()
+            run_test(test)
             cprint("PASS {}/{}: {} ({})\n".format(count, total, test.description, test.name), "green")
         except Exception as e:
             msg = "FAIL {}/{}: {} ({}). Exception ocurred: {}".format(count, total, test.description, test.name, e);
             cprint(msg, "red")
             fails+= "\n"+msg;
-            fails+= test.executed;
             failed += 1
-            umount_fs()
-            thread_fs.join()
+            test.unmount()
             if FAIL_FAST:
-               print(test.executed)
                raise e
         finally:
             count += 1
@@ -279,7 +316,7 @@ class LsStep(TestStep):
        itms = res.split("\n")[0:-1] # There is a final '' item.
        
        if len(itms) != len(self.exp_children):
-           raise Exception("Expected count of childre different got: "+str(len(itms))+" wanted: "+str(len(self.exp_children)))
+           raise Exception("Expected count of children different got: "+str(len(itms))+" wanted: "+str(len(self.exp_children))+"::\n'"+res+"'")
        
        for child in itms:
            if not child in self.exp_children:
@@ -359,10 +396,9 @@ class StatStep(TestStep):
           
     def __repr__(self):
         return self.command
-       
-def resolve_step(item):
-    action = item[DO]
-    
+        
+
+def resolve_step(action, item):
     command = action.split(" ", 2)[0]
     if command in special_commands:
        #print(command, "WAS special")
