@@ -143,7 +143,7 @@ void initDirs(){
     new_dir_id = 1;
 }
 
-static void serializeDirData(struct SerialFD* fd_out, struct DirData*  dir){ 
+void serializeDirData(struct SerialFD* fd_out, struct DirData*  dir){ 
     printf("SERIALIZE DIR DATA %d\n", dir->id_dir);
     writeInt(fd_out, dir->id_dir);
     writeInt(fd_out, dir->size);
@@ -153,13 +153,15 @@ static void serializeDirData(struct SerialFD* fd_out, struct DirData*  dir){
         writeInt(fd_out, dir->entries_id[j]);
     }
 }
-static void deserializeDirData(struct SerialFD* fd_in, struct DirData*  dir){ 
+void deserializeDirData(struct SerialFD* fd_in, struct DirData*  dir){ 
     printf("DESERIALIZE DIR DATA %d\n", dir->id_dir);
     readInt(fd_in, &(dir->size));
     readInt(fd_in, &(dir->capacity));
     
+    printf("DIR DATA %d cap: %d\n", dir->size, dir->capacity);
     for (int j = 0; j < dir->capacity; j++) {
         readInt(fd_in, &(dir->entries_id[j]));
+        printf("CHILD %d \n", dir->entries_id[j]);
     }
 }
 

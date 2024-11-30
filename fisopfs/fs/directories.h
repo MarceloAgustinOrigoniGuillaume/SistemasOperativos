@@ -22,6 +22,8 @@ struct DirData dirarr[INIT_DIRECTORIES];
 
 void initDirs();
 
+void serializeDirData(struct SerialFD* fd_out, struct DirData*  dir); 
+void deserializeDirData(struct SerialFD* fd_out, struct DirData*  dir); 
 
 void serializeDirs(struct SerialFD* fd_out);    // Persona 3/1?
 void deserializeDirs(struct SerialFD* fd_in);   // Persona 3/1?

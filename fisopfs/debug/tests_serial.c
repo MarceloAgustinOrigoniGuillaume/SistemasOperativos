@@ -54,6 +54,33 @@ static int assertInodeEQ(struct Inode * given, struct Inode * expected){
 
 
 
+static void setBasicDir(struct DirData* dir, int id, int size){
+   
+    dir->id_dir = id;
+    dir->size = size; // 0 children!
+    dir->next_free = NULL;
+    
+    dir->capacity = 5;
+
+    // Por suerte ya estan en code segment,... no en el heap!
+    for (int i = 0; i < dir->capacity; i++) {
+        dir->entries_id[i] = NOT_DEFINED_BLOCK;
+    }
+}
+
+static int assertDirEQ(struct DirData * given, struct DirData * expected){
+    EXPECT_EQ(given->id_dir, expected->id_dir, "Ids no eran el mismo para dir! given: %d");
+    EXPECT_EQ(given->size, expected->size, "Size no eran el mismo para dir! given: %d");
+    EXPECT_EQ(given->capacity, expected->capacity, "Capacity no eran el mismo para dir! given: %d");
+    
+    for (int i = 0; i < expected->capacity; i++) {
+        EXPECT_EQ(given->entries_id[i], expected->entries_id[i], "Child no era el mismo para dir! given: %d");
+    }
+    
+    return 0;
+}
+
+
 int some_err(){
     return 3;
 }
@@ -115,6 +142,44 @@ int test_simple_inode(){
 }
 
 
+int test_simple_dir(){
+    int err = 0;
+
+    struct DirData wrDir;
+    setBasicDir(&wrDir, 2, 2);//id, size
+    wrDir.entries_id[1] = 3;
+    wrDir.entries_id[2] = 1;
+    
+    CHECK_SUCCESS(err, assertDirEQ(&wrDir, &wrDir)); // Por las dudas
+    
+    
+    struct SerialFD writer = openWriter(filename, &err);
+     
+    EXPECT_EQ(err, 0, "Hubo error al abrir el writer err %d");
+    
+    serializeDirData(&writer, &wrDir);
+    closeWriter(&writer);
+
+    
+    struct SerialFD reader = openReader(filename, &err);
+    EXPECT_EQ(err, 0, "Hubo error al abrir el reader err %d");
+
+
+    struct DirData rdDir;
+    
+    
+    readInt(&reader, &rdDir.id_dir);
+    deserializeDirData(&reader, &rdDir);
+    
+    CHECK_SUCCESS(err, assertDirEQ(&rdDir, &wrDir)); 
+    
+    closeWriter(&reader);    
+    return 0;
+}
+
+
+
+
 int test_simple(){
      int err = 0;
      struct SerialFD writer = openWriter(filename, &err);
@@ -152,7 +217,7 @@ int test_simple(){
 }
 
 int countSerialTests(){
-    return 3;
+    return 4;
 }
 
 void initSerialTests(){
@@ -160,6 +225,7 @@ void initSerialTests(){
     addTest(&test_simple_success);
     addTest(&test_simple);
     addTest(&test_simple_inode);
+    addTest(&test_simple_dir);
     
     //addTest(&test_simple_fail);
 }

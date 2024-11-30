@@ -58,8 +58,8 @@ void serializeInodes(struct SerialFD* fd_out){    // Persona 4/1?
     serializeInodeData(fd_out, root_inode);
     
     
+    printf("CANT INODES TO WRITE %d\n", cant_inodes);
     writeInt(fd_out, cant_inodes);
-    printf("CANT INODES %d\n", cant_inodes);
 
     int left = cant_inodes;
     struct Inode*  next_free = free_inode;
@@ -86,10 +86,13 @@ void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
     printf("DESERIALIZE inodes fd: %d \n",fd_in->fd);
     // Deserial root
     root_inode = setBaseInode(0);
+    readInt(fd_in, &root_inode->id);
+    
     deserializeInodeData(fd_in, root_inode);
+    printf("---> ROOT INODE %s id: %d\n", root_inode->name,root_inode->id);
 
     int res = readInt(fd_in, &cant_inodes);
-    printf("CANT INODES %d\n", cant_inodes);
+    printf("CANT INODES READED %d\n", cant_inodes);
     
     int last_id = 0;
     free_inode = setBaseInode(1);    

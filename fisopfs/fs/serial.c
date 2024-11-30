@@ -101,13 +101,14 @@ static int readAll(int fd, uint8_t* out, int count){
 
 int writeInt(struct SerialFD* writer, int num){
     num = htonl(num);
+    //printf("WROTE INT BIG %d\n", num);
     return writeAll(writer, (uint8_t*)&num, sizeof(int));
 }
 
 int readInt(struct SerialFD* writer, int* num){
     int ret= readAll(writer->fd, (uint8_t*)num, sizeof(int));
     if(ret ==0){
-        printf("READ INT %d\n", *num);
+        //printf("READED INT BIG %d\n", *num);
         *num = ntohl(*num);
     }
     
@@ -122,7 +123,7 @@ int writeShort(struct SerialFD* writer, short num){
 int readShort(struct SerialFD* writer, short* num){
     int ret= readAll(writer->fd, (uint8_t*)num, sizeof(short));
     if(ret ==0){
-        printf("READ SHORT %d\n", *num);
+        //printf("READ SHORT %d\n", *num);
         *num = ntohs(*num);
     }
     
