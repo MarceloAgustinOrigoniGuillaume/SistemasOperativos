@@ -25,7 +25,7 @@ struct Inode {
     time_t created;      
     time_t modified;     
     time_t last_access;
-    struct Inode* next;  
+    struct Inode* next_free;  
     
     //struct Data *data;      
     int blocks;      

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-int cant_blocks = 0;
+static int cant_blocks = 0;
 
 static int writeToBlock(struct Block* block, const char* buff, int off , const int count){
     if(off > block->size){
@@ -91,8 +91,9 @@ void freeBlock(int id){
     
 }
 
-static int getFreeBlock(){
+static int popFreeBlock(){
     int id = first_free->id;
+    cant_blocks++; // Aumento la cantidad de bloques
     
     first_free->size = 0;
     
@@ -113,42 +114,79 @@ void initBlocks(){
     
     new_block = 1;
 }
+
+static void serializeBlockData(struct SerialFD* fd_out, struct Block* block){
+    writeInt(fd_out, block->id);
+    //writeInt(fd_out, block->size);
+    writeMsg(fd_out, &(block->data[0]), block->size);//BLOCK_SIZE);
+}
+
+static void deserializeBlockData(struct SerialFD* fd_in, struct Block* block){
+    readInt(fd_in, &block->size);
+    short tmp;
+    readCapMsg(fd_in, &(block->data[0]), &tmp, BLOCK_SIZE);
+    block->size = tmp;
+}
+
+
 void serializeBlocks(struct SerialFD* fd_out){
     printf("SERIALIZE blocks fd: %d \n",fd_out->fd);
-
-    for (int i = 0; i < cant_blocks; i++) {
-        struct Block * block = getBlock(i);
-        if(block == NULL){
+    writeInt(fd_out, cant_blocks);
+    
+    int left = cant_blocks;
+    struct Block*  next_free = first_free;
+    int i = 0;
+    while(next_free && left >0){
+        if(i == next_free->id){ //skip free ones
+            next_free = next_free->next_free;
+            i++;
             continue;
         }
-        
-        writeInt(fd_out, block->id);
-        writeInt(fd_out, block->size);
-        writeMsg(fd_out, &(block->data[0]), BLOCK_SIZE);
+        serializeBlockData(fd_out, &blocks[i]);
+        i++;
+        left--;
+    }
+    
+    while(left >0){
+        serializeBlockData(fd_out, &blocks[i]);
+        i++;
+        left--;    
     }
 }
 
 
 void deserializeBlocks(struct SerialFD* fd_in){
     printf("DESERIALIZE blocks fd: %d\n",fd_in->fd);
-
-    new_block = 0;
-    first_free = resetBlock(0);
     int res = readInt(fd_in, &cant_blocks);
-
+    
+    int last_id = 0;
+    first_free = resetBlock(0); // Asegurarse de que tiene un valor.
+    struct Block * curr_free = first_free;
+    
     for (int i = 0; i < cant_blocks; i++) {
-        int *id = 0;        
-        res = readInt(fd_in, id);
+        int id = 0;        
+        res = readInt(fd_in, &id);
         if (res == -1) {
+            printf("FAILED READ OF BLOCK ID!");
             return;
         }
-
-        struct Block * block = resetBlock(*id);
-        readInt(fd_in, &block->size);
-        readCapMsg(fd_in, &(block->data[0]), (short*) &(block->size), BLOCK_SIZE);
+        deserializeBlockData(fd_in, resetBlock(id));
         
-        new_block++;
+        while(last_id < id){ // Add as first!
+            curr_free->next_free = resetBlock(last_id);
+            curr_free = curr_free->next_free;
+            last_id++;
+        }
+                
     }
+    
+    new_block = last_id+1;
+    first_free = first_free->next_free;
+    // Pop first free que era un placeholder.
+    if(first_free == NULL){
+        first_free= resetBlock(new_block++);         
+    }
+    
 }
 
 
@@ -160,8 +198,7 @@ int allocFile(struct Inode* file){ // Persona 3
     
     file->blocks = 1;
     file->size_bytes = 0;
-    file->first_block = getFreeBlock();
-    cant_blocks++; // Aumento la cantidad de bloques
+    file->first_block = popFreeBlock();
     return 0;
 }
 

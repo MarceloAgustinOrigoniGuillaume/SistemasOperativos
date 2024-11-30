@@ -33,8 +33,6 @@ int readStr(struct SerialFD* writer, char** out);
 char * readMsg(struct SerialFD* writer, int* ret);
 int readCapMsg(struct SerialFD* writer, char* buffer,short * msg_len, int max);
 
-int readAll(int fd, uint8_t* buffer, int count);
-
 // Abre el writer abriendo el fd.
 struct SerialFD openWriter(const char * filepath, int * ret);
 struct SerialFD openReader(const char * filepath, int * ret);

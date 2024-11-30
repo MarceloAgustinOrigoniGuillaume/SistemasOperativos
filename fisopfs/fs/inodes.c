@@ -15,59 +15,106 @@ static struct Inode * setBaseInode(int id){
     return inode;
 }
 
+static void serializeInodeData(struct SerialFD* fd_out, struct Inode* inode){
+    writeInt(fd_out, inode->id);
+    writeStr(fd_out, inode->name);
+    writeInt(fd_out, inode->type);
+    writeInt(fd_out, inode->size_bytes);
+    writeInt(fd_out, inode->blocks);
+    writeInt(fd_out, inode->first_block);
+    writeInt(fd_out, inode->permissions);
+    writeInt(fd_out, inode->created);
+    writeInt(fd_out, inode->modified);
+    writeInt(fd_out, inode->last_access);
+}
+
+static void deserializeInodeData(struct SerialFD* fd_in, struct Inode* inode){
+    readStr(fd_in, &inode->name);
+    int temp;
+    readInt(fd_in, &temp);
+    inode->type = temp;
+    
+    readInt(fd_in, &inode->size_bytes);
+    readInt(fd_in, &inode->blocks);
+    readInt(fd_in, &inode->first_block);
+    readInt(fd_in, &inode->permissions);
+    readInt(fd_in, &temp);
+    inode->created = temp;
+    
+    readInt(fd_in, &temp);
+    inode->modified = temp;
+    
+    readInt(fd_in, &temp);
+    inode->last_access = temp;
+}
+
 
 void serializeInodes(struct SerialFD* fd_out){    // Persona 4/1?
     printf("SERIALIZE inodes fd: %d \n",fd_out->fd);
-
-    for (int i = 0; i < cant_inodes; i++) {
-        struct Inode * inode = &inodes[i];
-        if(inode->id == -1){
+    
+    // First root...
+    serializeInodeData(fd_out, root_inode);
+    
+    
+    writeInt(fd_out, cant_inodes);
+    int left = cant_inodes;
+    struct Inode*  next_free = free_inode;
+    int i = 1; // Skip root
+    while(next_free && left >0){
+        if(i == next_free->id){ //skip free ones
+            next_free = next_free->next_free;
+            i++;
             continue;
         }
-        
-        writeInt(fd_out, cant_inodes);
-        writeInt(fd_out, inode->id);
-        writeStr(fd_out, inode->name);
-        writeInt(fd_out, inode->type);
-        writeInt(fd_out, inode->size_bytes);
-        writeInt(fd_out, inode->blocks);
-        writeInt(fd_out, inode->first_block);
-        writeInt(fd_out, inode->permissions);
-        writeInt(fd_out, inode->created);
-        writeInt(fd_out, inode->modified);
-        writeInt(fd_out, inode->last_access);
+        serializeInodeData(fd_out, &inodes[i]);
+        i++;
+        left--;
     }
-
+    
+    while(left >0){
+        serializeInodeData(fd_out, &inodes[i]);
+        i++;
+        left--;    
+    }
 }
 
 void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
     printf("DESERIALIZE inodes fd: %d \n",fd_in->fd);
+    // Deserial root
+    root_inode = setBaseInode(0);
+    deserializeInodeData(fd_in, root_inode);
 
-    new_inodo_id = 0;
-    free_inode = setBaseInode(1);
     int res = readInt(fd_in, &cant_inodes);
-
+    
+    int last_id = 0;
+    free_inode = setBaseInode(1);    
+    struct Inode * curr_free = free_inode;
+    
     for (int i = 0; i < cant_inodes; i++) {
-        int *id = 0;
-        res = readInt(fd_in, id);
+        int id = 0;        
+        res = readInt(fd_in, &id);
         if (res == -1) {
+            printf("FAILED READ OF BLOCK ID!");
             return;
         }
-
-        struct Inode * inode = setBaseInode(*id);
-
-        readStr(fd_in, &inode->name);
-        readInt(fd_in, (int*) &inode->type);
-        readInt(fd_in, &inode->size_bytes);
-        readInt(fd_in, &inode->blocks);
-        readInt(fd_in, &inode->first_block);
-        readInt(fd_in, &inode->permissions);
-        readInt(fd_in, (int *) &inode->created);
-        readInt(fd_in, (int *) &inode->modified);
-        readInt(fd_in, (int*) &inode->last_access);
+        deserializeInodeData(fd_in, setBaseInode(id));
         
-        new_inodo_id++;
+        while(last_id < id){ // Add as next free!
+            curr_free->next_free = setBaseInode(last_id);
+            curr_free = curr_free->next_free;
+            last_id++;
+        }
+                
     }
+    
+    new_inodo_id = last_id+1;
+    free_inode = free_inode->next_free;
+    if(free_inode == NULL){
+        free_inode= setBaseInode(new_inodo_id++);         
+    }
+    
+    // Pop first free que era un placeholder.
+    
 }
 
 void initInodes(){
@@ -127,16 +174,16 @@ void deleteInode(struct Inode* inode) {
     inode->created = 0; 
     inode->modified = 0; 
     inode->last_access = 0;
-    inode->next = free_inode;
+    inode->next_free = free_inode;
     free_inode = inode;
 }
 
 
 struct Inode* createInode(const char* name, enum InodeType type) {
     struct Inode* inode;
-    if (free_inode->next == NULL) {
+    if (free_inode->next_free == NULL) {
       
-        free_inode->next= setBaseInode(new_inodo_id++);
+        free_inode->next_free= setBaseInode(new_inodo_id++);
     }
     
     inode = free_inode;
@@ -147,7 +194,7 @@ struct Inode* createInode(const char* name, enum InodeType type) {
     }
     
     // Pop del free inode.
-    free_inode= free_inode->next;
+    free_inode= free_inode->next_free;
     
     inode->type = type;
     inode->permissions = (type == I_DIR) ? 0755 : 0644;
@@ -159,6 +206,6 @@ struct Inode* createInode(const char* name, enum InodeType type) {
     inode->created = time(NULL); 
     inode->modified = inode->created; 
     inode->last_access = inode->created; 
-    inode->next = NULL;    
+    inode->next_free = NULL;    
     return inode;
 }

@@ -143,53 +143,88 @@ void initDirs(){
     new_dir_id = 1;
 }
 
+static void serializeDirData(struct SerialFD* fd_out, struct DirData*  dir){ 
+    writeInt(fd_out, dir->id_dir);
+    writeInt(fd_out, dir->size);
+    writeInt(fd_out, dir->capacity);
+    
+    for (int j = 0; j < dir->capacity; j++) {
+        writeInt(fd_out, dir->entries_id[j]);
+    }
+}
+static void deserializeDirData(struct SerialFD* fd_in, struct DirData*  dir){ 
+    readInt(fd_in, &(dir->size));
+    readInt(fd_in, &(dir->capacity));
+    
+    for (int j = 0; j < dir->capacity; j++) {
+        readInt(fd_in, &(dir->entries_id[j]));
+    }
+}
+
+
 void serializeDirs(struct SerialFD* fd_out){ 
     // No se usa el fd directamente! por tema little endian vs big endian y asi
     // Para numeros y asi esta los metodos de serial.h!
     printf("Serialize dirs data.. %d size dirs: %d\n",fd_out->fd, new_dir_id);
     writeInt(fd_out, cant_dirs);
-
-    for (int i = 0; i < cant_dirs; i++) {
-        struct DirData * dir = getDirData(i);
-        if(dir == NULL){
+    
+    int left = cant_dirs;
+    struct DirData*  next_free = first_free;
+    int i = 0;
+    
+    while(next_free && left >0){
+        if(i == next_free->id_dir){ //skip free ones
+            next_free = next_free->next_free;
+            i++;
             continue;
         }
-        
-        writeInt(fd_out, dir->id_dir);
-        writeInt(fd_out, dir->size);
-        writeInt(fd_out, dir->capacity);
-        
-        for (int j = 0; j < dir->capacity; j++) {
-            writeInt(fd_out, dir->entries_id[j]);
-        }
+        serializeDirData(fd_out, &dirarr[i]);
+        i++;
+        left--;
+    }
+    
+    while(left >0){
+        serializeDirData(fd_out, &dirarr[i]);
+        i++;
+        left--;    
     }
 }
 
 void deserializeDirs(struct SerialFD* fd_in){
     printf("Deserialize dirs data.. %d\n",fd_in->fd);
 
-    new_dir_id = 0;
-    first_free = resetDirData(0);
+    //new_dir_id = 0;
     int res = readInt(fd_in, &cant_dirs); 
-
+    int last_id = 0;
+    first_free = resetDirData(0);
+    struct DirData * curr_free = first_free;
+    
     for (int i = 0; i < cant_dirs; i++) {
-        int *id = 0;
-        res = readInt(fd_in, id);
+        int id = 0;        
+        res = readInt(fd_in, &id);
         if (res == -1) {
+            printf("FAILED READ OF DIR DATA ID!");
             return;
         }
-
-        struct DirData * dir = resetDirData(*id);
-
-        readInt(fd_in, &(dir->size));
-        readInt(fd_in, &(dir->capacity));
+        // Deserialize
         
-        for (int j = 0; j < dir->capacity; j++) {
-            readInt(fd_in, &(dir->entries_id[j]));
+        deserializeDirData(fd_in, resetDirData(id));
+        
+        while(last_id < id){ // Add as first!
+            curr_free->next_free = resetDirData(last_id);
+            curr_free = curr_free->next_free;
+            last_id++;
         }
-        
-        new_dir_id++;
+                
     }
+    
+    new_dir_id = last_id+1;
+    first_free = first_free->next_free;
+    if(first_free == NULL){
+        first_free= resetDirData(new_dir_id++);         
+    }
+    
+    // Pop first free que era un placeholder.
 }
 
 
