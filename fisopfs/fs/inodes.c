@@ -3,15 +3,29 @@
 #include <string.h>
 #include <stdlib.h>
 
+int cant_inodes = 0;
+
+struct Inode* root_inode= NULL;
+static int new_inodo_id = 1;
+
+static struct Inode * setBaseInode(int id){
+    struct Inode * inode = &inodes[id];
+    
+    inode->id = id;    
+    return inode;
+}
+
+
 void serializeInodes(struct SerialFD* fd_out){    // Persona 4/1?
     printf("SERIALIZE inodes fd: %d \n",fd_out->fd);
 
-    for (int i = 0; i < new_inodo_id; i++) {
+    for (int i = 0; i < cant_inodes; i++) {
         struct Inode * inode = &inodes[i];
         if(inode->id == -1){
             continue;
         }
         
+        writeInt(fd_out, cant_inodes);
         writeInt(fd_out, inode->id);
         writeStr(fd_out, inode->name);
         writeInt(fd_out, inode->type);
@@ -25,71 +39,36 @@ void serializeInodes(struct SerialFD* fd_out){    // Persona 4/1?
     }
 
 }
+
 void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
     printf("DESERIALIZE inodes fd: %d \n",fd_in->fd);
 
     new_inodo_id = 0;
     free_inode = setBaseInode(1);
-    int *id = 0;
-    char *name = NULL;
-    int *type = 0;
-    int *size_bytes = 0;
-    int *blocks = 0;
-    int *first_block = 0;
-    int *permissions = 0;
-    int *created = 0;
-    int *modified = 0;
-    int *last_access = 0;
-    int res = readInt(fd_in, id);
+    int res = readInt(fd_in, &cant_inodes);
 
-    while (res != -1) {
-        res = readStr(fd_in, &name);
-        res = readInt(fd_in, type);
-        res = readInt(fd_in, size_bytes);
-        res = readInt(fd_in, blocks);
-        res = readInt(fd_in, first_block);
-        res = readInt(fd_in, permissions);
-        res = readInt(fd_in, created);
-        res = readInt(fd_in, modified);
-        res = readInt(fd_in, last_access);
-        
+    for (int i = 0; i < cant_inodes; i++) {
+        int *id = 0;
+        res = readInt(fd_in, id);
+        if (res == -1) {
+            return;
+        }
+
         struct Inode * inode = setBaseInode(*id);
-        inode->name = name;
-        inode->type = *type;
-        inode->size_bytes = *size_bytes;
-        inode->blocks = *blocks;
-        inode->first_block = *first_block;
-        inode->permissions = *permissions;
-        inode->created = *created;
-        inode->modified = *modified;
-        inode->last_access = *last_access;
+
+        res = readStr(fd_in, &inode->name);
+        res = readInt(fd_in, (int*) &inode->type);
+        res = readInt(fd_in, &inode->size_bytes);
+        res = readInt(fd_in, &inode->blocks);
+        res = readInt(fd_in, &inode->first_block);
+        res = readInt(fd_in, &inode->permissions);
+        res = readInt(fd_in, (int *) &inode->created);
+        res = readInt(fd_in, (int *) &inode->modified);
+        res = readInt(fd_in, (int*) &inode->last_access);
         
         new_inodo_id++;
-        
-        id = 0;
-        name = NULL;
-        type = 0;
-        size_bytes = 0;
-        blocks = 0;
-        first_block = 0;
-        permissions = 0;
-        created = 0;
-        modified = 0;
-        last_access = 0;
-        res = readInt(fd_in, id);
     }
 }
-
-struct Inode* root_inode= NULL;
-static int new_inodo_id = 1;
-
-static struct Inode * setBaseInode(int id){
-    struct Inode * inode = &inodes[id];
-    
-    inode->id = id;    
-    return inode;
-}
-
 
 void initInodes(){
     root_inode = setBaseInode(0);

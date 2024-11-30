@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+int cant_blocks = 0;
 
 static int writeToBlock(struct Block* block, const char* buff, int off , const int count){
     if(off > block->size){
@@ -45,9 +46,6 @@ static int readFromBlock(struct Block* block, char* buff, int off , const int co
     return max;
 }
 
-
-
-
 static struct Block * first_free;
 static int new_block; 
 
@@ -80,7 +78,8 @@ void freeBlock(int id){
               //Add in between
               struct Block * curr = resetBlock(id);
               prev_free->next_free = curr;
-              curr->next_free = next_free;              
+              curr->next_free = next_free;      
+              cant_blocks--; // Reduzco la cantidad de bloques        
               return;
         }
         
@@ -117,7 +116,7 @@ void initBlocks(){
 void serializeBlocks(struct SerialFD* fd_out){
     printf("SERIALIZE blocks fd: %d \n",fd_out->fd);
 
-    for (int i = 0; i < new_block; i++) {
+    for (int i = 0; i < cant_blocks; i++) {
         struct Block * block = getBlock(i);
         if(block == NULL){
             continue;
@@ -135,24 +134,20 @@ void deserializeBlocks(struct SerialFD* fd_in){
 
     new_block = 0;
     first_free = resetBlock(0);
-    
-    int *id = 0;
-    int *size = 0;
-    int res = readInt(fd_in, id);
+    int res = readInt(fd_in, &cant_blocks);
 
-    while (res != -1) {
-        res = readInt(fd_in, size);
-        
+    for (int i = 0; i < cant_blocks; i++) {
+        int *id = 0;        
+        res = readInt(fd_in, id);
+        if (res == -1) {
+            return;
+        }
+
         struct Block * block = resetBlock(*id);
-        block->size = *size;
-        
+        res = readInt(fd_in, &block->size);
         res = readAll(fd_in->fd, (uint8_t*)block->data, BLOCK_SIZE);
         
         new_block++;
-        
-        id = 0;
-        size = 0;
-        res = readInt(fd_in, id);
     }
 }
 
@@ -166,7 +161,7 @@ int allocFile(struct Inode* file){ // Persona 3
     file->blocks = 1;
     file->size_bytes = 0;
     file->first_block = getFreeBlock();
-
+    cant_blocks++; // Aumento la cantidad de bloques
     return 0;
 }
 

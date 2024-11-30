@@ -7,7 +7,6 @@
 #include "./inode.h"
 #include "./serial.h"
 
-
 struct DirData{ // Persona 2
    int size;
    int capacity;
