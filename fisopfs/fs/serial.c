@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 #include <arpa/inet.h>
 
+#define FAIL_FAST 1
+
 void showBytes(const uint8_t* buff, int count){
     printf("count: %d 0x%02X(%d)",count, *buff,(char)*buff);
     
@@ -61,6 +63,12 @@ static int writeAll(struct SerialFD* writer, const uint8_t* src, int count){
      int wr = tryWriteAll(writer->fd, src, count);
      if(wr != count){
          fprintf(stderr,"FAILED WRITE! only wrote %d of %d\n",wr,count);
+         
+         #if FAIL_FAST == 1
+         fprintf(stderr,"FAIL FAST\n");
+         exit(errno);
+         #endif
+         
          return errno;
      }
      writer->wrote_count+= count;
@@ -75,6 +83,11 @@ static int readAll(int fd, uint8_t* out, int count){
      int rd = tryReadAll(fd, out, count);
      if(rd != count){
          fprintf(stderr,"FAILED READ! only read %d of %d\n",rd,count);
+         #if FAIL_FAST == 1
+         fprintf(stderr,"FAIL FAST\n");
+         exit(errno);
+         #endif
+
          return errno;
      }     
      //printf(" READ:");
@@ -140,6 +153,10 @@ int readStr(struct SerialFD* writer, char** out){
      
      uint8_t * res = (uint8_t*) malloc(sizeof(uint8_t)*(msg_len+1)); 
      if(res == NULL){
+         #if FAIL_FAST == 1
+         fprintf(stderr,"FAIL FAST FAILED ALLOC STR\n");
+         exit(-1);
+         #endif     
          return -1;
      }
      
@@ -163,6 +180,10 @@ char * readMsg(struct SerialFD* writer, int* ret){
      //printf("READ MSG len %d\n", msg_len);
      uint8_t * res = (uint8_t*) malloc(sizeof(uint8_t)*(msg_len));  
      if(res == NULL){
+         #if FAIL_FAST == 1
+         fprintf(stderr,"FAIL FAST FAILED ALLOC STR\n");
+         exit(-1);
+         #endif      
          *ret = -1;
          return NULL;
      }
@@ -182,6 +203,10 @@ int readCapMsg(struct SerialFD* writer, char* buffer, short * msg_len, int max){
      
      if(*msg_len > max){
          fprintf(stderr, "Went out of bounds at read msg for buffer!\n");
+         #if FAIL_FAST == 1
+         fprintf(stderr,"FAIL FAST OUT OF CAP\n");
+         exit(-1);
+         #endif          
          return -1;
      }
      
