@@ -3,13 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-void serializeInodes(struct SerialFD* fd_out){    // Persona 4/1?
-    printf("SERIALIZE inodes fd: %d \n",fd_out->fd);
-
-}
-void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
-    printf("DESERIALIZE inodes fd: %d \n",fd_in->fd);
-}
+int cant_inodes = 0;
 
 struct Inode* root_inode= NULL;
 static int new_inodo_id = 1;
@@ -21,6 +15,60 @@ static struct Inode * setBaseInode(int id){
     return inode;
 }
 
+
+void serializeInodes(struct SerialFD* fd_out){    // Persona 4/1?
+    printf("SERIALIZE inodes fd: %d \n",fd_out->fd);
+
+    for (int i = 0; i < cant_inodes; i++) {
+        struct Inode * inode = &inodes[i];
+        if(inode->id == -1){
+            continue;
+        }
+        
+        writeInt(fd_out, cant_inodes);
+        writeInt(fd_out, inode->id);
+        writeStr(fd_out, inode->name);
+        writeInt(fd_out, inode->type);
+        writeInt(fd_out, inode->size_bytes);
+        writeInt(fd_out, inode->blocks);
+        writeInt(fd_out, inode->first_block);
+        writeInt(fd_out, inode->permissions);
+        writeInt(fd_out, inode->created);
+        writeInt(fd_out, inode->modified);
+        writeInt(fd_out, inode->last_access);
+    }
+
+}
+
+void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
+    printf("DESERIALIZE inodes fd: %d \n",fd_in->fd);
+
+    new_inodo_id = 0;
+    free_inode = setBaseInode(1);
+    int res = readInt(fd_in, &cant_inodes);
+
+    for (int i = 0; i < cant_inodes; i++) {
+        int *id = 0;
+        res = readInt(fd_in, id);
+        if (res == -1) {
+            return;
+        }
+
+        struct Inode * inode = setBaseInode(*id);
+
+        readStr(fd_in, &inode->name);
+        readInt(fd_in, (int*) &inode->type);
+        readInt(fd_in, &inode->size_bytes);
+        readInt(fd_in, &inode->blocks);
+        readInt(fd_in, &inode->first_block);
+        readInt(fd_in, &inode->permissions);
+        readInt(fd_in, (int *) &inode->created);
+        readInt(fd_in, (int *) &inode->modified);
+        readInt(fd_in, (int*) &inode->last_access);
+        
+        new_inodo_id++;
+    }
+}
 
 void initInodes(){
     root_inode = setBaseInode(0);

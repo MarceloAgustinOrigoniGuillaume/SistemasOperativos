@@ -1,6 +1,7 @@
 #include "./directories.h"
 #include "./inodes.h"
 #include "./blocks.h"
+#include "./serial.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 #define ROOT_DIR "/"
 #define NULL_CHAR 1
 
+int cant_dirs = 0;
 
 static char* splitLast(char* temp, const char* delimiter, int *ind) {
     int length = strlen(temp);
@@ -95,7 +97,8 @@ static void freeDirData(int id){
               //Add in between
               struct DirData * curr = resetDirData(id);
               prev_free->next_free = curr;
-              curr->next_free = next_free;              
+              curr->next_free = next_free;
+              cant_dirs--; // Reduzco la cantidad de dirs
               return;
         }
         
@@ -139,13 +142,54 @@ void initDirs(){
     first_free = resetDirData(0);
     new_dir_id = 1;
 }
-void serializeDirs(struct SerialFD* fd_out){
-     // No se usa el fd directamente! por tema little endian vs big endian y asi
-     // Para numeros y asi esta los metodos de serial.h!
-     printf("Serialize dirs data.. %d size dirs: %d\n",fd_out->fd, new_dir_id);
+
+void serializeDirs(struct SerialFD* fd_out){ 
+    // No se usa el fd directamente! por tema little endian vs big endian y asi
+    // Para numeros y asi esta los metodos de serial.h!
+    printf("Serialize dirs data.. %d size dirs: %d\n",fd_out->fd, new_dir_id);
+    writeInt(fd_out, cant_dirs);
+
+    for (int i = 0; i < cant_dirs; i++) {
+        struct DirData * dir = getDirData(i);
+        if(dir == NULL){
+            continue;
+        }
+        
+        writeInt(fd_out, dir->id_dir);
+        writeInt(fd_out, dir->size);
+        writeInt(fd_out, dir->capacity);
+        
+        for (int j = 0; j < dir->capacity; j++) {
+            writeInt(fd_out, dir->entries_id[j]);
+        }
+    }
 }
+
 void deserializeDirs(struct SerialFD* fd_in){
-     printf("Deserialize dirs data.. %d\n",fd_in->fd);
+    printf("Deserialize dirs data.. %d\n",fd_in->fd);
+
+    new_dir_id = 0;
+    first_free = resetDirData(0);
+    int res = readInt(fd_in, &cant_dirs); 
+
+    for (int i = 0; i < cant_dirs; i++) {
+        int *id = 0;
+        res = readInt(fd_in, id);
+        if (res == -1) {
+            return;
+        }
+
+        struct DirData * dir = resetDirData(*id);
+
+        readInt(fd_in, &(dir->size));
+        readInt(fd_in, &(dir->capacity));
+        
+        for (int j = 0; j < dir->capacity; j++) {
+            readInt(fd_in, &(dir->entries_id[j]));
+        }
+        
+        new_dir_id++;
+    }
 }
 
 
@@ -194,7 +238,7 @@ int allocDir(struct Inode* dir){ // Persona 2
     dir->blocks = 1;
     dir->size_bytes = 4096;// por default capaz?
     dir->first_block = getFreeDirData();
-
+    cant_dirs++; // Aumento la cantidad de dirs
     return 0;
 }
 
