@@ -56,15 +56,15 @@ void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
 
         struct Inode * inode = setBaseInode(*id);
 
-        res = readStr(fd_in, &inode->name);
-        res = readInt(fd_in, (int*) &inode->type);
-        res = readInt(fd_in, &inode->size_bytes);
-        res = readInt(fd_in, &inode->blocks);
-        res = readInt(fd_in, &inode->first_block);
-        res = readInt(fd_in, &inode->permissions);
-        res = readInt(fd_in, (int *) &inode->created);
-        res = readInt(fd_in, (int *) &inode->modified);
-        res = readInt(fd_in, (int*) &inode->last_access);
+        readStr(fd_in, &inode->name);
+        readInt(fd_in, (int*) &inode->type);
+        readInt(fd_in, &inode->size_bytes);
+        readInt(fd_in, &inode->blocks);
+        readInt(fd_in, &inode->first_block);
+        readInt(fd_in, &inode->permissions);
+        readInt(fd_in, (int *) &inode->created);
+        readInt(fd_in, (int *) &inode->modified);
+        readInt(fd_in, (int*) &inode->last_access);
         
         new_inodo_id++;
     }

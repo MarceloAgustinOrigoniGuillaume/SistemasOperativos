@@ -124,7 +124,7 @@ void serializeBlocks(struct SerialFD* fd_out){
         
         writeInt(fd_out, block->id);
         writeInt(fd_out, block->size);
-        writeMsg(fd_out, block->data, BLOCK_SIZE);
+        writeMsg(fd_out, &(block->data[0]), BLOCK_SIZE);
     }
 }
 
@@ -144,8 +144,8 @@ void deserializeBlocks(struct SerialFD* fd_in){
         }
 
         struct Block * block = resetBlock(*id);
-        res = readInt(fd_in, &block->size);
-        res = readAll(fd_in->fd, (uint8_t*)block->data, BLOCK_SIZE);
+        readInt(fd_in, &block->size);
+        readCapMsg(fd_in, &(block->data[0]), (short*) &(block->size), BLOCK_SIZE);
         
         new_block++;
     }

@@ -178,14 +178,14 @@ void deserializeDirs(struct SerialFD* fd_in){
         if (res == -1) {
             return;
         }
-        
+
         struct DirData * dir = resetDirData(*id);
 
-        res = readInt(fd_in, &(dir->size));
-        res = readInt(fd_in, &(dir->capacity));
+        readInt(fd_in, &(dir->size));
+        readInt(fd_in, &(dir->capacity));
         
         for (int j = 0; j < dir->capacity; j++) {
-            res = readInt(fd_in, &(dir->entries_id[j]));
+            readInt(fd_in, &(dir->entries_id[j]));
         }
         
         new_dir_id++;
