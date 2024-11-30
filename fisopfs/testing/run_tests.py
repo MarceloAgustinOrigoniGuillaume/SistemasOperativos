@@ -37,7 +37,9 @@ out_serial = "test_serial.fisopfs" # default
 def mount_normal_fs():
     if os.path.exists(mount_point):
        shutil.rmtree(mount_point) # por las dudas
-    
+    if os.path.exists(out_serial):
+       os.remove(out_serial) # por las dudas
+       
     p= Popen("mkdir "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
     (stdout, stderr) = p.communicate()    
     if p.returncode != 0:
