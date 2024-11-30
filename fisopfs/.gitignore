@@ -4,3 +4,4 @@ dbg_*
 persistence_file.fisopfs
 test_serial*.fisopfs
 testing/out
+*.f

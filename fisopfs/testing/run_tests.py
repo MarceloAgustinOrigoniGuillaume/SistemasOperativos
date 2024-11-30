@@ -6,6 +6,7 @@ import sys
 import re
 import tempfile
 import yaml
+import time
 
 from os import listdir
 from os.path import isfile, join
@@ -137,6 +138,7 @@ def launch_step(step):
     else:
         (stdout, stderr) = p.communicate(timeout=100)        
     step.check(p.returncode, stdout, stderr)
+    time.sleep(0.1)
 
 class FilesystemTest():
     def __init__(self, filepath: str):
@@ -215,7 +217,7 @@ def run_test(test):
     
     if test.unmount():
        # Fallo el unmount hubo algun segmentation fault
-       return True
+       return ind>=0
     
     while(ind >=0):
         test.mount()

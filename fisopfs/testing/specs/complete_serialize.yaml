@@ -1,5 +1,6 @@
 name: Complete Serialize
 description: "Creates a complete system. Y lo serializa/deserializa"
+serial_file: complete_serial.f
 
 steps:
    # Arrange
