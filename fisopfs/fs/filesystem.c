@@ -276,14 +276,12 @@ void* fs_init(struct fuse_conn_info *conn){
         initDirs();
         initBlocks();
         
-        
-        allocDir(root_inode);
-	
 	printf("OPEN READER DESERIAL %s\n",filedisk);
 	struct SerialFD fd = openReader(filedisk, &err);
 	
 	if(err != 0){
 	    printf("Serialize open file for deserializing failed! %d '%s'\n", err,filedisk);
+	    allocDir(root_inode);
 	    hardcodefs();
 	    return NULL;
 	}

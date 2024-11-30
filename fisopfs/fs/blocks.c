@@ -176,10 +176,9 @@ void deserializeBlocks(struct SerialFD* fd_in){
         }
         deserializeBlockData(fd_in, resetBlock(id));
         
-        while(last_id < id){ // Add as first!
+        while(++last_id < id){ // Add as first!
             curr_free->next_free = resetBlock(last_id);
             curr_free = curr_free->next_free;
-            last_id++;
         }
                 
     }

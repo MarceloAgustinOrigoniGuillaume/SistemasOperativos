@@ -161,7 +161,9 @@ void deserializeDirData(struct SerialFD* fd_in, struct DirData*  dir){
     printf("DIR DATA %d cap: %d\n", dir->size, dir->capacity);
     for (int j = 0; j < dir->capacity; j++) {
         readInt(fd_in, &(dir->entries_id[j]));
-        printf("CHILD %d \n", dir->entries_id[j]);
+        if(dir->entries_id[j]>=0){
+            printf("CHILD %d \n", dir->entries_id[j]);
+        }
     }
 }
 
@@ -217,10 +219,10 @@ void deserializeDirs(struct SerialFD* fd_in){
         
         deserializeDirData(fd_in, resetDirData(id));
         
-        while(last_id < id){ // Add as first!
+        while(++last_id < id){ // Add as first!
             curr_free->next_free = resetDirData(last_id);
             curr_free = curr_free->next_free;
-            last_id++;
+            //last_id++;
         }
                 
     }
@@ -385,8 +387,8 @@ struct Inode* searchChild(struct DirData* dir, const char* name){
 }
 
 struct Inode* searchRelative(const char* path){ // Persona 2
-    printf("SEARCH RELATIVE: LOOK FOR %s\n", path);
     struct Inode* root = getinode(0); // ROOT
+    printf("SEARCH RELATIVE: LOOK FOR %s ... root is '%s' %d\n", path, root->name, root->first_block);
 
     if(strlen(path) == 0 || strcmp(path, root->name) == 0){
         return root;
@@ -477,11 +479,12 @@ struct Inode* searchNew(const char* path, char **name_child){ // Persona 2
 void readChildren(struct Inode* dir, struct DirEntries* out){ // Persona 2
     
     struct DirData* data = getDirData(dir->first_block);
-    
     if(data == NULL){
+        printf("---->DIR DATA INVALID AT READ DIR?!\n");
         out->size = 0;
         return;
     }
+    printf("---->DIR DATA SIZE %d cap: %d\n",data->size,data->capacity);
     out->size = data->size;
     out->first = (inode_id_t*) malloc(sizeof(inode_id_t) * data->size);
     
@@ -491,6 +494,7 @@ void readChildren(struct Inode* dir, struct DirEntries* out){ // Persona 2
         if(data->entries_id[i]< 0){
              continue;
         }
+        printf("---->VALID CHILD %d: \n",data->entries_id[i]);
         
         *curr = data->entries_id[i];
         curr = curr+1; // Next! 

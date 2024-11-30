@@ -16,7 +16,7 @@ static struct Inode * setBaseInode(int id){
 }
 
 void serializeInodeData(struct SerialFD* fd_out, struct Inode* inode){
-    printf("SERIALIZE inode: %d\n",inode->id);
+    printf("SERIALIZE inode: %d %s first: %d\n",inode->id,inode->name, inode->first_block);
     writeInt(fd_out, inode->id);
     writeStr(fd_out, inode->name);
     writeInt(fd_out, inode->type);
@@ -30,7 +30,7 @@ void serializeInodeData(struct SerialFD* fd_out, struct Inode* inode){
 }
 
 void deserializeInodeData(struct SerialFD* fd_in, struct Inode* inode){
-    printf("DESERIALIZE inode: %d\n",inode->id);
+    printf("DESERIALIZE inode id: %d\n",inode->id);
     readStr(fd_in, &inode->name);
     int temp;
     readInt(fd_in, &temp);
@@ -48,6 +48,7 @@ void deserializeInodeData(struct SerialFD* fd_in, struct Inode* inode){
     
     readInt(fd_in, &temp);
     inode->last_access = temp;
+    printf("INODE %d DESERIAL GOT NAME %s and first block %d\n",inode->id, inode->name, inode->first_block);
 }
 
 
@@ -107,19 +108,21 @@ void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
         }
         deserializeInodeData(fd_in, setBaseInode(id));
         
-        while(last_id < id){ // Add as next free!
+        while(++last_id < id){ // Add as next free!
             curr_free->next_free = setBaseInode(last_id);
             curr_free = curr_free->next_free;
-            last_id++;
         }
                 
     }
+    
     
     new_inodo_id = last_id+1;
     free_inode = free_inode->next_free;
     if(free_inode == NULL){
         free_inode= setBaseInode(new_inodo_id++);         
     }
+    printf("LAST ID WAS %d\n", last_id);
+    printf("FREE INODE WAS %d\n", free_inode->id);
     
     // Pop first free que era un placeholder.
     
