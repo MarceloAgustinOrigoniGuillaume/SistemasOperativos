@@ -8,42 +8,10 @@
 #include <stdlib.h>
 #include "fs/inode.h"
 
-static void testUno(const char *filename){
-     int err = 0;
-     struct SerialFD writer = openWriter(filename, &err);
-     
-     writeInt(&writer, 25);
-     writeStr(&writer, "UNO");
-     writeInt(&writer, 50);
-     
-     closeWriter(&writer);
-     
-     
 
-     struct SerialFD reader = openReader(filename, &err);
-     int out;
-     char * outStr = NULL;
-     
-     err = readInt(&reader, &out);
-     if(out != 25){
-         printf("--->ERR %d FIRST NUM NO ERA 25 fue %d!\n",err, out);
-     }
-     
-     err =readStr(&reader, &outStr);
-     
-     if(outStr == NULL){
-         printf("->ERR %d out str era null\n",err);
-     } else if(strcmp("UNO", outStr) != 0){
-         printf("--->ERR %d FIRST STR NO ERA 'UNO' fue '%s'\n",err, outStr);
-     }
-     
-     err = readInt(&reader, &out);
-     if(out != 50){
-         printf("--->ERR %d SECOND NUM NO ERA 50! fue %d!\n",err, out);
-     }
-     closeWriter(&reader);
+#include "debug/asserts.h"
+#include "debug/tests_serial.h"
 
-}
 
 
 static void saveInode(struct SerialFD* writer, struct Inode* inode){
@@ -108,6 +76,18 @@ main(int argc, char *argv[])
      showBytes((uint8_t*)buff, sizeof(data));
      */
      
-     testUno(argv[1]);
-     return testInode(argv[1]);
+     setPath(argv[1]);
+     
+     int count = countSerialTests();
+     
+     allocTests(count);
+     
+     initSerialTests();
+     
+     int failed = runTests(0); // 1 para que sea fail fast.
+     
+     printf("----------Failed %d of %d\n", failed ,testCount());
+     freeTests();
+     
+     return failed > 0? 1: 0;
 }

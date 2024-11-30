@@ -10,6 +10,7 @@ COMPILERFLAGS = $(CFLAGS)
 extension = c
 
 src_files ?= $(wildcard ./fs/*.$(extension)) #fisopfs.c
+dbg_src_files ?= $(wildcard ./debug/*.$(extension)) #main_debug.c
 
 # Flags for FUSE
 LDLIBS := $(shell pkg-config fuse --cflags --libs)
@@ -17,12 +18,14 @@ LDLIBS := $(shell pkg-config fuse --cflags --libs)
 # Name for the filesystem!
 FS_NAME := fisopfs
 
-all: build
+all: build debug
 o_src_files = $(patsubst %.$(extension),%.o,$(src_files))
+o_dbg_files = $(patsubst %.$(extension),%.o,$(dbg_src_files))
 
 build: $(o_src_files)
 	$(COMPILER) $(o_src_files) $(FS_NAME).c -o $(FS_NAME) $(COMPILERFLAGS) $(LDLIBS)
-	$(COMPILER) $(o_src_files) main_serial.c -o dbg_serial $(COMPILERFLAGS) $(LDLIBS)
+debug: $(o_src_files) $(o_dbg_files)
+	$(COMPILER) $(o_src_files) $(o_dbg_files) main_debug.c -o dbg_serial $(COMPILERFLAGS) $(LDLIBS)
 %.o: %.$(extension)
 	$(COMPILER) $(COMPILERFLAGS) -o $@ -c $< $(LDLIBS)
 	echo
@@ -48,6 +51,6 @@ docker-attach:
 
 clean:
 	rm -rf $(EXEC) *.o core vgcore.* $(FS_NAME) dbg_serial
-	rm -f $(o_src_files)
+	rm -f $(o_src_files) $(o_dbg_files)
 
 .PHONY: all build clean format docker-build docker-run docker-attach
