@@ -7,6 +7,13 @@
 
 void initBlocks();
 
+// Para tests!
+int writeToBlock(struct Block* block, const char* buff, int off , const int count);
+
+void serializeBlockData(struct SerialFD* fd_out, struct Block* block);
+void deserializeBlockData(struct SerialFD* fd_in, struct Block* block);
+
+
 void serializeBlocks(struct SerialFD* fd_out);    // Persona 3/1?
 void deserializeBlocks(struct SerialFD* fd_in);   // Persona 3/1?
 

@@ -81,6 +81,32 @@ static int assertDirEQ(struct DirData * given, struct DirData * expected){
 }
 
 
+
+static void setBasicBlock(struct Block* block, int id, const char* toWrite){
+    block->id = id;
+    block->size = 0;
+    if(toWrite){
+        writeToBlock(block, toWrite, 0 , strlen(toWrite));
+    }
+}
+
+static int assertBlockEQ(struct Block * given, struct Block * expected){
+    EXPECT_EQ(given->id, expected->id, "Ids no eran el mismo para file! given: %d");
+    EXPECT_EQ(given->size, expected->size, "Size no eran el mismo para file! given: %d");
+    
+    for (int i = 0; i < expected->size; i++) {
+        if(given->data[i] != expected->data[i]){
+            printf("Content was not the same! at %d given: %c exp: %c\n",i, given->data[i],expected->data[i]);
+            return 1;
+        }
+    }
+    
+    return 0;
+}
+
+
+
+
 int some_err(){
     return 3;
 }
@@ -179,6 +205,42 @@ int test_simple_dir(){
 
 
 
+int test_simple_file(){
+    int err = 0;
+
+    struct Block wrBlock;
+    setBasicBlock(&wrBlock, 2, "UN TEXTO!");//id, size
+    
+    CHECK_SUCCESS(err, assertBlockEQ(&wrBlock, &wrBlock)); // Por las dudas
+    
+    
+    struct SerialFD writer = openWriter(filename, &err);
+     
+    EXPECT_EQ(err, 0, "Hubo error al abrir el writer err %d");
+    
+    serializeBlockData(&writer, &wrBlock);
+    closeWriter(&writer);
+
+    
+    struct SerialFD reader = openReader(filename, &err);
+    EXPECT_EQ(err, 0, "Hubo error al abrir el reader err %d");
+
+
+    struct Block rdBlock;
+    
+    
+    readInt(&reader, &rdBlock.id);
+    deserializeBlockData(&reader, &rdBlock);
+    
+    CHECK_SUCCESS(err, assertBlockEQ(&rdBlock, &wrBlock)); 
+    
+    closeWriter(&reader);    
+    return 0;
+}
+
+
+
+
 
 int test_simple(){
      int err = 0;
@@ -217,7 +279,7 @@ int test_simple(){
 }
 
 int countSerialTests(){
-    return 4;
+    return 5;
 }
 
 void initSerialTests(){
@@ -226,6 +288,7 @@ void initSerialTests(){
     addTest(&test_simple);
     addTest(&test_simple_inode);
     addTest(&test_simple_dir);
+    addTest(&test_simple_file);
     
     //addTest(&test_simple_fail);
 }

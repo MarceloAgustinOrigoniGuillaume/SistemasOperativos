@@ -5,7 +5,7 @@
 
 static int cant_blocks = 0;
 
-static int writeToBlock(struct Block* block, const char* buff, int off , const int count){
+int writeToBlock(struct Block* block, const char* buff, int off , const int count){
     if(off > block->size){
         return -1; // Se fallo escritura.
     }
@@ -115,19 +115,19 @@ void initBlocks(){
     new_block = 1;
 }
 
-static void serializeBlockData(struct SerialFD* fd_out, struct Block* block){
-    printf("SERIALIZE block: %d\n",block->id);
+void serializeBlockData(struct SerialFD* fd_out, struct Block* block){
+    printf("SERIALIZE block: %d size: %d\n",block->id, block->size);
     writeInt(fd_out, block->id);
     //writeInt(fd_out, block->size);
     writeMsg(fd_out, &(block->data[0]), block->size);//BLOCK_SIZE);
 }
 
-static void deserializeBlockData(struct SerialFD* fd_in, struct Block* block){
-    printf("DESERIALIZE block: %d\n",block->id);
-    readInt(fd_in, &block->size);
+void deserializeBlockData(struct SerialFD* fd_in, struct Block* block){
+    //readInt(fd_in, &block->size);
     short tmp;
     readCapMsg(fd_in, &(block->data[0]), &tmp, BLOCK_SIZE);
     block->size = tmp;
+    printf("DESERIALIZE block: %d size: %d\n",block->id, block->size);
 }
 
 
