@@ -1,6 +1,23 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+
+#define CHECK_SUCCESS(err, action)\
+  err = action;\
+  if(err != 0){\
+       return -1;\
+  }\
+
+#define CHECK_SUCCESS_VERB(err, action, msg)\
+  err = action;\
+  if(err != 0){\
+       fprintf(stderr, msg, err);\
+       fprintf(stderr, "\n");\
+       return -1;\
+  }\
+
+
+
 typedef unsigned char uint8_t; 
 
 struct SerialFD {

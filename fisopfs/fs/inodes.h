@@ -14,6 +14,10 @@ struct Inode* root_inode;
 
 
 void initInodes();
+
+void serializeInodeData(struct SerialFD* fd_out, struct Inode* inode);
+void deserializeInodeData(struct SerialFD* fd_in, struct Inode* inode);
+
 void serializeInodes(struct SerialFD* fd_out);    // Persona 4/1?
 void deserializeInodes(struct SerialFD* fd_in);   // Persona 4/1?
 
