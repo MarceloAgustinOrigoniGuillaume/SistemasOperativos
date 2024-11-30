@@ -116,9 +116,44 @@ void initBlocks(){
 }
 void serializeBlocks(struct SerialFD* fd_out){
     printf("SERIALIZE blocks fd: %d \n",fd_out->fd);
+
+    for (int i = 0; i < new_block; i++) {
+        struct Block * block = getBlock(i);
+        if(block == NULL){
+            continue;
+        }
+        
+        writeInt(fd_out, block->id);
+        writeInt(fd_out, block->size);
+        writeMsg(fd_out, block->data, BLOCK_SIZE);
+    }
 }
+
+
 void deserializeBlocks(struct SerialFD* fd_in){
     printf("DESERIALIZE blocks fd: %d\n",fd_in->fd);
+
+    new_block = 0;
+    first_free = resetBlock(0);
+    
+    int *id = 0;
+    int *size = 0;
+    int res = readInt(fd_in, id);
+
+    while (res != -1) {
+        res = readInt(fd_in, size);
+        
+        struct Block * block = resetBlock(*id);
+        block->size = *size;
+        
+        res = readAll(fd_in->fd, (uint8_t*)block->data, BLOCK_SIZE);
+        
+        new_block++;
+        
+        id = 0;
+        size = 0;
+        res = readInt(fd_in, id);
+    }
 }
 
 

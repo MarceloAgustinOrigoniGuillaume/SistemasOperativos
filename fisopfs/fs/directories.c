@@ -1,6 +1,7 @@
 #include "./directories.h"
 #include "./inodes.h"
 #include "./blocks.h"
+#include "./serial.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -139,13 +140,57 @@ void initDirs(){
     first_free = resetDirData(0);
     new_dir_id = 1;
 }
-void serializeDirs(struct SerialFD* fd_out){
-     // No se usa el fd directamente! por tema little endian vs big endian y asi
-     // Para numeros y asi esta los metodos de serial.h!
-     printf("Serialize dirs data.. %d size dirs: %d\n",fd_out->fd, new_dir_id);
+
+void serializeDirs(struct SerialFD* fd_out){ 
+    // No se usa el fd directamente! por tema little endian vs big endian y asi
+    // Para numeros y asi esta los metodos de serial.h!
+    printf("Serialize dirs data.. %d size dirs: %d\n",fd_out->fd, new_dir_id);
+
+    for (int i = 0; i < new_dir_id; i++) {
+        struct DirData * dir = getDirData(i);
+        if(dir == NULL){
+            continue;
+        }
+        
+        writeInt(fd_out, dir->size);
+        writeInt(fd_out, dir->capacity);
+        writeInt(fd_out, dir->id_dir);
+        
+        for (int j = 0; j < dir->capacity; j++) {
+            writeInt(fd_out, dir->entries_id[j]);
+        }
+    }
 }
+
 void deserializeDirs(struct SerialFD* fd_in){
-     printf("Deserialize dirs data.. %d\n",fd_in->fd);
+    printf("Deserialize dirs data.. %d\n",fd_in->fd);
+
+    new_dir_id = 0;
+    first_free = resetDirData(0);
+    int *size = 0;
+    int *capacity = 0;
+    int *id = 0;
+    int res = readInt(fd_in, size);
+
+    while (res != -1) {
+        res = readInt(fd_in, capacity);
+        res = readInt(fd_in, id);
+        
+        struct DirData * dir = resetDirData(*id);
+        dir->size = *size;
+        dir->capacity = *capacity;
+        
+        for (int j = 0; j < dir->capacity; j++) {
+            res = readInt(fd_in, &(dir->entries_id[j]));
+        }
+        
+        new_dir_id++;
+
+        size = 0;
+        capacity = 0;
+        id = 0;
+        res = readInt(fd_in, size);
+    }
 }
 
 
