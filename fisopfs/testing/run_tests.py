@@ -34,6 +34,25 @@ reflector_binary = "testing/reflector" #default
 mount_point = "prueba/" # default
 out_serial = "test_serial.fisopfs" # default
 
+def write_out_to(name, content):
+   name = name.replace(" " ,"_").replace("/","_")
+   name = "./testing/out/out_"+name
+   print("WRITING STDOUT OF FS TO ",name)
+   
+   hnd = open(name, "w+")
+   hnd.write(content.decode() if content else "NONE")
+   hnd.close()
+
+def write_err_to(name, content):
+   name = name.replace(" " ,"_").replace("/","_")
+   name = "./testing/out/err_"+name
+   print("WRITING STDERR OF FS TO ",name)
+   
+   hnd = open(name, "w+")
+   hnd.write(content.decode() if content else "NONE")
+   hnd.close()
+
+
 def mount_normal_fs():
     if os.path.exists(mount_point):
        shutil.rmtree(mount_point) # por las dudas
@@ -50,25 +69,21 @@ def mount_normal_fs():
 def unmount_normal_fs():
     p= Popen("rm -r "+mount_point, stdin=PIPE, stdout=PIPE, stderr=STDOUT, shell=True)
     p.communicate()
-    if p.returncode != 0:
-       raise Exception("Failed umount of filesystem!")
+    return p.returncode
+    #if p.returncode != 0:
+       #raise Exception("Failed umount of filesystem! Directorie not removed?")
 
 
 def get_comm():
     return fs_binary+" --filedisk "+out_serial+" -f "+mount_point
 
-def fs_wait(process):
-    (stdout, stderr) = process.communicate()
-    if process.returncode != 0:
-       print("----mount out:")
-       print(stdout.decode()if stdout else "NONE!")
-       print("----mount err:")
-       print(stderr.decode()if stderr else "NONE!")
-       return
+def fs_wait(process, test):
+    (test.fs_out, test.fs_err) = process.communicate()
+    test.fs_ret =process.returncode 
     
-    if SHOW_LOG_FS:
+    if test.fs_ret == 0 and SHOW_LOG_FS:
        print("----mount out:")
-       print(stdout.decode()if stdout else "NONE!")
+       write_out_to(test.name,test.fs_out)
        
 
 def mount_fs(command):
@@ -135,6 +150,10 @@ class FilesystemTest():
         self.steps = []
         self.breakpoint = -1
         
+        self.fs_out = None
+        self.fs_err = None
+        self.fs_ret = 0
+        
         self.thread_fs = None
         self.serial_file = data.get('serial_file', out_serial)
         
@@ -163,12 +182,14 @@ class FilesystemTest():
         print(comm)
         proc = mount_fs(comm)
         proc.poll()
-        self.thread_fs = threading.Thread(target = fs_wait, args = (proc,)) 
+        self.thread_fs = threading.Thread(target = fs_wait, args = (proc,self)) 
         self.thread_fs.start()
     
     def unmount(self):
         umount_fs()
         self.thread_fs.join()
+        return self.fs_ret != 0 # denotar que fallo
+        
         
 
     def rerun(self, ind ):
@@ -190,13 +211,20 @@ class FilesystemTest():
 def run_test(test):
     test.mount()
     
-    ind = test.run()        
-    test.unmount()
+    ind = test.run()
+    
+    if test.unmount():
+       # Fallo el unmount hubo algun segmentation fault
+       return True
+    
     while(ind >=0):
         test.mount()
         ind = test.rerun(ind)        
-        test.unmount()
-
+        if test.unmount():
+           # Fallo el unmount hubo algun segmentation fault
+           return True
+    
+    return False
             
 def run_tests(tests):
     
@@ -214,14 +242,27 @@ def run_tests(tests):
     for test_path in tests:
         test = FilesystemTest(test_path)#, subs_map)
         try:
-            run_test(test)
+            if run_test(test):
+                msg = "FAIL {}/{}: {} ({}). Exception at filesystem!".format(count, total, test.description, test.name, );
+                cprint(msg, "red")
+                fails+= "\n"+msg;
+                failed += 1
+                write_out_to(test.name,test.fs_out)
+                write_err_to(test.name,test.fs_out)
+            
             cprint("PASS {}/{}: {} ({})\n".format(count, total, test.description, test.name), "green")
         except Exception as e:
+            #print("----------------->FS STDOUT")            
             msg = "FAIL {}/{}: {} ({}). Exception ocurred: {}".format(count, total, test.description, test.name, e);
             cprint(msg, "red")
+            
             fails+= "\n"+msg;
             failed += 1
             test.unmount()
+            
+            write_out_to(test.name,test.fs_out)
+            write_err_to(test.name,test.fs_out)
+            
             if FAIL_FAST:
                raise e
         finally:
