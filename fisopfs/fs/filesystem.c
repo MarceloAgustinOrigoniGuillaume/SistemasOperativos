@@ -279,6 +279,7 @@ void* fs_init(struct fuse_conn_info *conn){
         
         allocDir(root_inode);
 	
+	printf("OPEN READER DESERIAL %s\n",filedisk);
 	struct SerialFD fd = openReader(filedisk, &err);
 	
 	if(err != 0){
@@ -286,10 +287,10 @@ void* fs_init(struct fuse_conn_info *conn){
 	    hardcodefs();
 	    return NULL;
 	}
-	hardcodefs();
 	
-	deserializeBlocks(&fd);
+	
 	deserializeInodes(&fd);
+	deserializeBlocks(&fd);
 	deserializeDirs(&fd);
 
 	closeWriter(&fd);
@@ -307,8 +308,8 @@ void fs_destroy(){
 	    return;
 	}
 	
-	serializeBlocks(&fd);
 	serializeInodes(&fd);
+	serializeBlocks(&fd);
 	serializeDirs(&fd);
 	
 	closeWriter(&fd);
