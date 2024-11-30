@@ -15,7 +15,7 @@ static struct Inode * setBaseInode(int id){
     return inode;
 }
 
-static void serializeInodeData(struct SerialFD* fd_out, struct Inode* inode){
+void serializeInodeData(struct SerialFD* fd_out, struct Inode* inode){
     writeInt(fd_out, inode->id);
     writeStr(fd_out, inode->name);
     writeInt(fd_out, inode->type);
@@ -28,7 +28,7 @@ static void serializeInodeData(struct SerialFD* fd_out, struct Inode* inode){
     writeInt(fd_out, inode->last_access);
 }
 
-static void deserializeInodeData(struct SerialFD* fd_in, struct Inode* inode){
+void deserializeInodeData(struct SerialFD* fd_in, struct Inode* inode){
     readStr(fd_in, &inode->name);
     int temp;
     readInt(fd_in, &temp);
