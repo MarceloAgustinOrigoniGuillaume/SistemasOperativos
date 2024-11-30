@@ -36,6 +36,7 @@ static int tryReadAll(int fd, uint8_t* out, int count){
      
      //printf("LST RD at +%d count:%d rd : %d\n", tot, count,rd);
      // Ultimo read!
+     
      if(rd > 0){
          return tot+rd;
      }
@@ -106,6 +107,7 @@ int writeInt(struct SerialFD* writer, int num){
 int readInt(struct SerialFD* writer, int* num){
     int ret= readAll(writer->fd, (uint8_t*)num, sizeof(int));
     if(ret ==0){
+        printf("READ INT %d\n", *num);
         *num = ntohl(*num);
     }
     
@@ -120,6 +122,7 @@ int writeShort(struct SerialFD* writer, short num){
 int readShort(struct SerialFD* writer, short* num){
     int ret= readAll(writer->fd, (uint8_t*)num, sizeof(short));
     if(ret ==0){
+        printf("READ SHORT %d\n", *num);
         *num = ntohs(*num);
     }
     
