@@ -116,12 +116,14 @@ void initBlocks(){
 }
 
 static void serializeBlockData(struct SerialFD* fd_out, struct Block* block){
+    printf("SERIALIZE block: %d\n",block->id);
     writeInt(fd_out, block->id);
     //writeInt(fd_out, block->size);
     writeMsg(fd_out, &(block->data[0]), block->size);//BLOCK_SIZE);
 }
 
 static void deserializeBlockData(struct SerialFD* fd_in, struct Block* block){
+    printf("DESERIALIZE block: %d\n",block->id);
     readInt(fd_in, &block->size);
     short tmp;
     readCapMsg(fd_in, &(block->data[0]), &tmp, BLOCK_SIZE);
@@ -132,7 +134,8 @@ static void deserializeBlockData(struct SerialFD* fd_in, struct Block* block){
 void serializeBlocks(struct SerialFD* fd_out){
     printf("SERIALIZE blocks fd: %d \n",fd_out->fd);
     writeInt(fd_out, cant_blocks);
-    
+    printf("CANT BLOCKS %d\n", cant_blocks);
+
     int left = cant_blocks;
     struct Block*  next_free = first_free;
     int i = 0;
@@ -158,6 +161,7 @@ void serializeBlocks(struct SerialFD* fd_out){
 void deserializeBlocks(struct SerialFD* fd_in){
     printf("DESERIALIZE blocks fd: %d\n",fd_in->fd);
     int res = readInt(fd_in, &cant_blocks);
+    printf("CANT BLOCKS %d\n", cant_blocks);
     
     int last_id = 0;
     first_free = resetBlock(0); // Asegurarse de que tiene un valor.

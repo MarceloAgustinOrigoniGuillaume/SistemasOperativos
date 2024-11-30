@@ -16,6 +16,7 @@ static struct Inode * setBaseInode(int id){
 }
 
 static void serializeInodeData(struct SerialFD* fd_out, struct Inode* inode){
+    printf("SERIALIZE inode: %d\n",inode->id);
     writeInt(fd_out, inode->id);
     writeStr(fd_out, inode->name);
     writeInt(fd_out, inode->type);
@@ -29,6 +30,7 @@ static void serializeInodeData(struct SerialFD* fd_out, struct Inode* inode){
 }
 
 static void deserializeInodeData(struct SerialFD* fd_in, struct Inode* inode){
+    printf("DESERIALIZE inode: %d\n",inode->id);
     readStr(fd_in, &inode->name);
     int temp;
     readInt(fd_in, &temp);
@@ -57,6 +59,8 @@ void serializeInodes(struct SerialFD* fd_out){    // Persona 4/1?
     
     
     writeInt(fd_out, cant_inodes);
+    printf("CANT INODES %d\n", cant_inodes);
+
     int left = cant_inodes;
     struct Inode*  next_free = free_inode;
     int i = 1; // Skip root
@@ -85,6 +89,7 @@ void deserializeInodes(struct SerialFD* fd_in){  // Persona 4/1?
     deserializeInodeData(fd_in, root_inode);
 
     int res = readInt(fd_in, &cant_inodes);
+    printf("CANT INODES %d\n", cant_inodes);
     
     int last_id = 0;
     free_inode = setBaseInode(1);    
@@ -176,6 +181,7 @@ void deleteInode(struct Inode* inode) {
     inode->last_access = 0;
     inode->next_free = free_inode;
     free_inode = inode;
+    cant_inodes--; // Reduzco la cantidad de inodes
 }
 
 
@@ -206,6 +212,8 @@ struct Inode* createInode(const char* name, enum InodeType type) {
     inode->created = time(NULL); 
     inode->modified = inode->created; 
     inode->last_access = inode->created; 
-    inode->next_free = NULL;    
+    inode->next_free = NULL;   
+
+    cant_inodes++; // Aumento la cantidad de inodes 
     return inode;
 }

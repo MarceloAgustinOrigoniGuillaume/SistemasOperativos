@@ -144,6 +144,7 @@ void initDirs(){
 }
 
 static void serializeDirData(struct SerialFD* fd_out, struct DirData*  dir){ 
+    printf("SERIALIZE DIR DATA %d\n", dir->id_dir);
     writeInt(fd_out, dir->id_dir);
     writeInt(fd_out, dir->size);
     writeInt(fd_out, dir->capacity);
@@ -153,6 +154,7 @@ static void serializeDirData(struct SerialFD* fd_out, struct DirData*  dir){
     }
 }
 static void deserializeDirData(struct SerialFD* fd_in, struct DirData*  dir){ 
+    printf("DESERIALIZE DIR DATA %d\n", dir->id_dir);
     readInt(fd_in, &(dir->size));
     readInt(fd_in, &(dir->capacity));
     
@@ -167,6 +169,7 @@ void serializeDirs(struct SerialFD* fd_out){
     // Para numeros y asi esta los metodos de serial.h!
     printf("Serialize dirs data.. %d size dirs: %d\n",fd_out->fd, new_dir_id);
     writeInt(fd_out, cant_dirs);
+    printf("CANT DIRS %d\n", cant_dirs);
     
     int left = cant_dirs;
     struct DirData*  next_free = first_free;
@@ -195,6 +198,8 @@ void deserializeDirs(struct SerialFD* fd_in){
 
     //new_dir_id = 0;
     int res = readInt(fd_in, &cant_dirs); 
+    printf("CANT DIRS %d\n", cant_dirs);
+
     int last_id = 0;
     first_free = resetDirData(0);
     struct DirData * curr_free = first_free;
