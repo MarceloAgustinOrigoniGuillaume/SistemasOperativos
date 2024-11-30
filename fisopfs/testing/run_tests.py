@@ -202,7 +202,7 @@ class FilesystemTest():
         curr = first
         for step in self.steps[first:]:
             if(self.breakpoint == curr):
-                print("SERIALIZE!!!!")
+                print("----------SERIALIZE/DESERIALIZE!!!!")
                 return curr
             launch_step(step)
             curr+=1
@@ -211,6 +211,8 @@ class FilesystemTest():
 
 
 def run_test(test):
+    print("----> WAIT BEFORE MOUNT AGAIN!")
+    time.sleep(1)
     test.mount()
     
     ind = test.run()
@@ -220,6 +222,9 @@ def run_test(test):
        return ind>=0
     
     while(ind >=0):
+        print("----> WAIT BEFORE MOUNT AGAIN!")
+        time.sleep(1)
+        
         test.mount()
         ind = test.rerun(ind)        
         if test.unmount():
