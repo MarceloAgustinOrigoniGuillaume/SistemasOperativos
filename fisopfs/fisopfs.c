@@ -13,17 +13,19 @@
 
 #include "fs/filesystem.h"
 
-int fs_utime(const char * path, struct utimbuf * out){
-    printf("-->GET UTIMES FOR %s \n",path);
-    return -ENOENT;
+int
+fs_utime(const char *path, struct utimbuf *out)
+{
+	printf("-->GET UTIMES FOR %s \n", path);
+	return -ENOENT;
 }
 static struct fuse_operations operations = {
 	.getattr = fs_getattrs,
 	.readdir = fs_readdir,
 	.read = fs_readfile,
-	.create= fs_touch,
-	.mkdir= fs_mkdir,
-	.rmdir= fs_rmdir,
+	.create = fs_touch,
+	.mkdir = fs_mkdir,
+	.rmdir = fs_rmdir,
 	.write = fs_write,
 	.init = fs_init,
 	.destroy = fs_destroy,

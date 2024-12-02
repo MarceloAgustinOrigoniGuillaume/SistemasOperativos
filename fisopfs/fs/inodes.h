@@ -8,25 +8,25 @@
 #define INIT_INODES 256
 
 struct Inode inodes[INIT_INODES];
-struct Inode* free_inode;
+struct Inode *free_inode;
 
-struct Inode* root_inode;
+struct Inode *root_inode;
 
 
 void initInodes();
 
-void serializeInodeData(struct SerialFD* fd_out, struct Inode* inode);
-void deserializeInodeData(struct SerialFD* fd_in, struct Inode* inode);
+void serializeInodeData(struct SerialFD *fd_out, struct Inode *inode);
+void deserializeInodeData(struct SerialFD *fd_in, struct Inode *inode);
 
-void serializeInodes(struct SerialFD* fd_out);    // Persona 4/1?
-void deserializeInodes(struct SerialFD* fd_in);   // Persona 4/1?
+void serializeInodes(struct SerialFD *fd_out);   // Persona 4/1?
+void deserializeInodes(struct SerialFD *fd_in);  // Persona 4/1?
 
 
 // Manejo de inodos
-struct Inode* createInode(const char* name, enum InodeType tipo); // Persona 4
-void deleteInode(struct Inode* inode); // Persona 4
-void statOf(struct Inode* inode, struct stat *st); // Persona 4
+struct Inode *createInode(const char *name, enum InodeType tipo);  // Persona 4
+void deleteInode(struct Inode *inode);                             // Persona 4
+void statOf(struct Inode *inode, struct stat *st);                 // Persona 4
 
-struct Inode* getinode(inode_id_t id); // Persona 4
+struct Inode *getinode(inode_id_t id);  // Persona 4
 
 #endif

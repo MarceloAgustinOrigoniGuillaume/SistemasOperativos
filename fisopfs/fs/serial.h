@@ -2,67 +2,65 @@
 #define SERIAL_H
 
 
-#define CHECK_SUCCESS(err, action)\
-  err = action;\
-  if(err != 0){\
-       return -1;\
-  }\
+#define CHECK_SUCCESS(err, action)                                             \
+	err = action;                                                          \
+	if (err != 0) {                                                        \
+		return -1;                                                     \
+	}
 
-#define CHECK_SUCCESS_VERB(err, action, msg)\
-  err = action;\
-  if(err != 0){\
-       fprintf(stderr, msg, err);\
-       fprintf(stderr, "\n");\
-       return -1;\
-  }\
+#define CHECK_SUCCESS_VERB(err, action, msg)                                   \
+	err = action;                                                          \
+	if (err != 0) {                                                        \
+		fprintf(stderr, msg, err);                                     \
+		fprintf(stderr, "\n");                                         \
+		return -1;                                                     \
+	}
 
 
-
-typedef unsigned char uint8_t; 
+typedef unsigned char uint8_t;
 
 struct SerialFD {
-    int fd;
-    int wrote_count;
-    //Writer(int _fd, int _wrote): fd(_fd), wrote_count(_wrote){} 
-    //Writer(int _fd): {} 
+	int fd;
+	int wrote_count;
+	// Writer(int _fd, int _wrote): fd(_fd), wrote_count(_wrote){}
+	// Writer(int _fd): {}
 };
 
-void showBytes(const uint8_t* buff, int count);
+void showBytes(const uint8_t *buff, int count);
 
 
-int writeInt(struct SerialFD* writer, int num);
+int writeInt(struct SerialFD *writer, int num);
 
-int writeShort(struct SerialFD* writer, short num);
+int writeShort(struct SerialFD *writer, short num);
 
 // 0 terminated! se escribe directamente y se busca por el 0.
 // O bue.. deberia. Por ahora es lo mismo ! que el msg.
-int writeStr(struct SerialFD* writer, const char* str);
+int writeStr(struct SerialFD *writer, const char *str);
 
 
 // len y dsps el buffer
-int writeMsg(struct SerialFD* writer, const char* buffer, int count);
+int writeMsg(struct SerialFD *writer, const char *buffer, int count);
 
 
-
-int readInt(struct SerialFD* writer, int* num);
-int readShort(struct SerialFD* writer, short* num);
-int readStr(struct SerialFD* writer, char** out);
-char * readMsg(struct SerialFD* writer, int* ret);
-int readCapMsg(struct SerialFD* writer, char* buffer,short * msg_len, int max);
+int readInt(struct SerialFD *writer, int *num);
+int readShort(struct SerialFD *writer, short *num);
+int readStr(struct SerialFD *writer, char **out);
+char *readMsg(struct SerialFD *writer, int *ret);
+int readCapMsg(struct SerialFD *writer, char *buffer, short *msg_len, int max);
 
 // Abre el writer abriendo el fd.
-struct SerialFD openWriter(const char * filepath, int * ret);
-struct SerialFD openReader(const char * filepath, int * ret);
+struct SerialFD openWriter(const char *filepath, int *ret);
+struct SerialFD openReader(const char *filepath, int *ret);
 
 
-void closeWriter(struct SerialFD* writer);
+void closeWriter(struct SerialFD *writer);
 
 // "abre" un sub item writer.
 // Que consta en reservar un espacio para la length y dup
-struct SerialFD openSubWriter(struct SerialFD* writerBase);
+struct SerialFD openSubWriter(struct SerialFD *writerBase);
 
-// "cierra"/ agrega al writer base el sub item. Y cierra el writer sub itm 
-int closeSubWriter(struct SerialFD* writerBase,struct SerialFD* writerSubitm);
+// "cierra"/ agrega al writer base el sub item. Y cierra el writer sub itm
+int closeSubWriter(struct SerialFD *writerBase, struct SerialFD *writerSubitm);
 
 
 #endif
