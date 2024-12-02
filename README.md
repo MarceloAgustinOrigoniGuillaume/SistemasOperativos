@@ -27,9 +27,6 @@ Para manejar la alocacion de nuevos elementos y la remocion. En los 3 modulos qu
 En cuanto a limitaciones se plantearon que las cosas por ahora son estaticas. El size maximo de un archivo es un bloque de 512 bytes, la cantidad maxima de hijos es 128 para un directorio. Y la cantidad de directorios, bloques y/o inodos, tambien es limitada a la capacidad inicial.
 
 
-## Los structs en cuestion son:
-
-
 # Serializacion
 Lo bueno de no tener dependencias entre modulos y trabajar con ids. Es que se puede serializar/deserializar cada modulo independientemente.
 
