@@ -59,4 +59,3 @@ Se los dividio en "steps" que son definidos por el yaml. Teniendo un step base q
 Y casos especificos para Ls y Stat, que parsean el output para la bash de ubuntu. Ademas se agrego el step "serialize" interno, que desmonta y vuelve a montar el filesystem para probar el serializado.
 
 Se agrego tiempos entre steps y montados. Para tener mejor consistencias ya que suele haber tests que fallan erraticamente.
-
